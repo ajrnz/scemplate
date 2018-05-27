@@ -8,7 +8,15 @@ import fastparse.WhitespaceApi
 import fastparse.core.Parsed
 
 
-object StringTemplate {
+object TemplateBuilder {
+  implicit def toStringValue(value: String) = StringValue(value)
+  implicit def toIntValue(value: Int) = IntValue(value)
+  implicit def toIntValue(value: Boolean) = BooleanValue(value)
+  implicit def seqToArrayValue(items: Seq[String]) = ArrayValue(items.toIndexedSeq.map(StringValue(_)))
+  implicit def seqIntToArrayValue(items: Seq[Int]) = ArrayValue(items.toIndexedSeq.map(IntValue(_)))
+}
+
+object Template {
   val White = fastparse.WhitespaceApi.Wrapper{
     import fastparse.all._
     val ws = P(" " | "\t" | "\n").rep
@@ -93,7 +101,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
 
   val tree: Either[String, TemplateExpr] = {
     val start = System.currentTimeMillis
-    StringTemplate.mainDoc.parse(templateText, instrument = if (instrument) instrumentFunction else null) match {
+    Template.mainDoc.parse(templateText, instrument = if (instrument) instrumentFunction else null) match {
       case Parsed.Success(output, _) =>
         val parseTime = System.currentTimeMillis - start
         if (instrument) {
@@ -142,7 +150,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
       case ForLoop(index, array, expr) =>
         val prim = evalValue(array, context)
         prim.toArray.value.foreach{ item =>
-          render(expr, context.copy(dict = context.dict + (index -> item)), sb)
+          render(expr, context.copy(values = context.values + (index -> item)), sb)
         }
 
       case IfThenElse(pred, thenExpr, elseExpr) =>
@@ -159,11 +167,14 @@ class Template(templateText: String, val instrument: Boolean = false) {
       case x: BooleanValue => x
 
       case Variable(name) =>
-        context.dict(name)
+        context.values(name)
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
-        context.functions(name).function(paramValues)
+        val functionSpec = context.functions(name)
+        if (paramValues.size != functionSpec.numParams)
+          throw new Exception(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
+        functionSpec.function(paramValues)
 
       case cond: ConditionalExpr =>
         val a = evalValue(cond.a, context)

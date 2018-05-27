@@ -96,4 +96,11 @@ object ConditionalExpr {
 
 case class FunctionSpec(numParams: Int, function: Seq[PrimitiveValue] => PrimitiveValue)
 
-case class Context(dict: Map[String, PrimitiveValue], functions: Map[String, FunctionSpec])
+case class Context(values: Map[String, PrimitiveValue] = Map.empty, functions: Map[String, FunctionSpec] = Map.empty) {
+  def withValues(items: (String, PrimitiveValue)*): Context = {
+    copy(values = values ++ items)
+  }
+  def withFunctions(items: (String, FunctionSpec)*): Context = {
+    copy(functions = functions ++ items)
+  }
+}

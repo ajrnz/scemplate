@@ -1,33 +1,32 @@
 package ajr.scemplate
 import utest._
 
-import ajr.scemplate.implicits._
+import ajr.scemplate.TemplateBuilder._
 
 trait TestHelper {
-  val dict = Map[String,PrimitiveValue](
-    "OneString" -> "1",
-    "OneInt" -> 1,
-    "dollars" -> 1000,
-    "twenty_one" -> 21,
-    "trueValue" -> true,
-    "falseValue" -> false,
-    "age" -> 18,
-    "this" -> "THIS",
-    "that" -> "THAT",
-    "contract.name.first" -> "Fred",
-    "people" -> "andrew,fred,jim,sally,brenda",
-    "titleString" -> "This is my title"
-  ).withDefault(x => throw new Exception(s"Missing variable: $x"))
-
-  val functions = Map(
-    "lowerCase" -> FunctionSpec(1, x => StringValue(x(0).toStr.toLowerCase)),
-    "upperCase" -> FunctionSpec(1, x => StringValue(x(0).toStr.toUpperCase)),
-    "currencyCommas" -> FunctionSpec(1, x => StringValue(x(0).toStr.reverse.grouped(3).mkString(",").reverse)),
-    "range" -> FunctionSpec(2, x => ArrayValue(Range(x(0).toInt, x(1).toInt).map(IntValue))),
-    "repeat" -> FunctionSpec(2, x=> x(0).toStr * x(1).toInt)
-  )
-
-  val context = Context(dict, functions)
+  val context = Context()
+    .withValues(
+      "OneString" -> "1",
+      "OneInt" -> 1,
+      "dollars" -> 1000,
+      "twenty_one" -> 21,
+      "trueValue" -> true,
+      "falseValue" -> false,
+      "age" -> 18,
+      "this" -> "THIS",
+      "that" -> "THAT",
+      "contract.name.first" -> "Fred",
+      "people" -> List("andrew","fred","jim","sally","brenda"),
+      "oddNumbers" -> Seq(1,3,5,7,9),
+      "titleString" -> "This is my title"
+    )
+    .withFunctions(
+      "lowerCase" ->      function(_.toStr.toLowerCase),
+      "upperCase" ->      function(_.toStr.toLowerCase),
+      "currencyCommas" -> function(_.toStr.reverse.grouped(3).mkString(",").reverse),
+      "range" ->          function((s,e) => ArrayValue(Range(s.toInt, e.toInt).map(IntValue))),
+      "repeat" ->         function((a,b) => a.toStr * b.toInt)
+    )
 
   val instrument = false
 
@@ -43,5 +42,20 @@ trait TestHelper {
     val t = new Template(tmpl, instrument = instrument)
     assert(t.error.isDefined)
   }
+
+  def function(fcn: PrimitiveValue => PrimitiveValue): FunctionSpec =
+    FunctionSpec(1, x => fcn(x(0)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(2, x => fcn(x(0),x(1)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(3, x => fcn(x(0),x(1),x(2)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(4, x => fcn(x(0),x(1),x(2),x(3)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(5, x => fcn(x(0),x(1),x(2),x(3),x(4)))
 
 }

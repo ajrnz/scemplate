@@ -42,6 +42,7 @@ object TemplateTest extends TestSuite with TestHelper {
     'functions - {
       'oneparam - validate("${lowerCase(this)}", "this")
       'twoparam - validate("""${repeat("abc", 3)}""", "abcabcabc")
+      'toFewParams - intercept[Exception] { validate("${lowerCase()}", "this") }
     }
 
     'expressions - {
