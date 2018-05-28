@@ -10,7 +10,7 @@ case class IfThenElse(pred: Value, thenExpr: TemplateExpr, elseExpr: TemplateExp
 
 sealed trait Value extends TemplateExpr
 
-sealed trait PrimitiveValue extends Value with Ordered[Value] {
+sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
   def toInt: Int = sys.error(s"$this cannot be converted to an integer")
   def toStr: String
   def toBoolean: BooleanValue = sys.error(s"$this cannot be converted to a boolean")
@@ -18,16 +18,16 @@ sealed trait PrimitiveValue extends Value with Ordered[Value] {
   def toMap: MapValue = sys.error(s"$this cannot be converted to a map")
 }
 
-case class StringValue(value: String) extends PrimitiveValue {
-  def compare(that: Value): Int = that match {
+case class StringValue(value: String) extends TemplateValue {
+  def compare(that: TemplateValue): Int = that match {
     case StringValue(thatString) => value.compare(thatString)
     case _ => throw new Exception(s"Can't compare string $this with $that")
   }
   override def toStr = value
 }
 
-case class IntValue(value: Int) extends PrimitiveValue {
-  def compare(that: Value): Int = that match {
+case class IntValue(value: Int) extends TemplateValue {
+  def compare(that: TemplateValue): Int = that match {
     case IntValue(thatValue) =>
       value - thatValue
     case _ => throw new Exception(s"int: Can't compare int $this with $that")
@@ -37,8 +37,8 @@ case class IntValue(value: Int) extends PrimitiveValue {
   override def toBoolean: BooleanValue = BooleanValue(value != 0)
 }
 
-case class BooleanValue(value: Boolean) extends PrimitiveValue {
-  def compare(that: Value): Int = that match {
+case class BooleanValue(value: Boolean) extends TemplateValue {
+  def compare(that: TemplateValue): Int = that match {
     case BooleanValue(thatValue) => if (value == thatValue) 0 else 1
     case _ => throw new Exception(s"Can't compare boolean $this with $that")
   }
@@ -52,14 +52,14 @@ object BooleanValue {
   def apply(value: Boolean): BooleanValue = if (value) trueV else falseV
 }
 
-case class ArrayValue(value: IndexedSeq[PrimitiveValue]) extends PrimitiveValue {
-  def compare(that: Value): Int = throw new Exception(s"Can't compare array values")
+case class ArrayValue(value: IndexedSeq[TemplateValue]) extends TemplateValue {
+  def compare(that: TemplateValue): Int = throw new Exception(s"Can't compare array values")
   override def toStr = "[" + value.map(_.toStr).mkString(",") + "]"
   override def toArray = this
 }
 
-case class MapValue(value: Map[String,PrimitiveValue]) extends PrimitiveValue {
-  def compare(that: Value): Int = throw new Exception(s"Can't compare map values")
+case class MapValue(value: Map[String,TemplateValue]) extends TemplateValue {
+  def compare(that: TemplateValue): Int = throw new Exception(s"Can't compare map values")
   override def toStr = "{" + value.map{case(k,v) => s"k=${v.toStr}"}.mkString(",") +"}"
   override def toMap = this
   def apply(key: String) = value(key)
@@ -104,10 +104,10 @@ object ConditionalExpr {
   }
 }
 
-case class FunctionSpec(numParams: Int, function: Seq[PrimitiveValue] => PrimitiveValue)
+case class FunctionSpec(numParams: Int, function: Seq[TemplateValue] => TemplateValue)
 
 case class Context(values: MapValue = MapValue.empty, functions: Map[String, FunctionSpec] = Map.empty) {
-  def withValues(items: (String, PrimitiveValue)*): Context = {
+  def withValues(items: (String, TemplateValue)*): Context = {
     copy(values = MapValue(values.value ++ items))
   }
   def withFunctions(items: (String, FunctionSpec)*): Context = {

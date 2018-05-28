@@ -6,7 +6,7 @@ import ajr.scemplate.TemplateBuilder._
 case class Person(name: String, age: Int, awards: Seq[String] = Seq.empty[String])
 case class Employee(person: Person, salary: Int, isManager: Boolean)
 object Employee {
-  implicit def toPV(value: Employee): PrimitiveValue = CaseClassEncoder.gen[Employee].encode(value)
+  implicit def toPV(value: Employee): TemplateValue = CaseClassEncoder.gen[Employee].encode(value)
 }
 
 

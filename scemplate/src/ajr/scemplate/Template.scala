@@ -17,23 +17,23 @@ object TemplateBuilder {
   implicit val showString = new Show[String] { def encode(v: String) = StringValue(v) }
   implicit val showInt = new Show[Int] { def encode(v: Int) = IntValue(v) }
   implicit val showBoolean = new Show[Boolean] { def encode(v: Boolean) = BooleanValue(v) }
-  def showArray[X](implicit lift: X => PrimitiveValue): Show[Seq[X]] =
+  def showArray[X](implicit lift: X => TemplateValue): Show[Seq[X]] =
     new Show[Seq[X]] { def encode(v: Seq[X]) = ArrayValue(v.map(x => lift(x)).toIndexedSeq) }
   implicit val showArrayString = showArray[String]
 
-  def function(fcn: PrimitiveValue => PrimitiveValue): FunctionSpec =
+  def function(fcn: TemplateValue => TemplateValue): FunctionSpec =
     FunctionSpec(1, x => fcn(x(0)))
 
-  def function(fcn: (PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+  def function(fcn: (TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
     FunctionSpec(2, x => fcn(x(0),x(1)))
 
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+  def function(fcn: (TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
     FunctionSpec(3, x => fcn(x(0),x(1),x(2)))
 
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+  def function(fcn: (TemplateValue,TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
     FunctionSpec(4, x => fcn(x(0),x(1),x(2),x(3)))
 
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+  def function(fcn: (TemplateValue,TemplateValue,TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
     FunctionSpec(5, x => fcn(x(0),x(1),x(2),x(3),x(4)))
 }
 
@@ -181,7 +181,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
     }
   }
 
-  def evalValue(value: Value, context: Context): PrimitiveValue = {
+  def evalValue(value: Value, context: Context): TemplateValue = {
     value match  {
       case x: StringValue => x
       case x: IntValue => x
@@ -189,7 +189,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
 
       case Variable(path) =>
         try {
-          path.foldLeft[PrimitiveValue](context.values){ (ctx, key) =>
+          path.foldLeft[TemplateValue](context.values){ (ctx, key) =>
             ctx.toMap(key)
           }
         }
