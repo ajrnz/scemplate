@@ -2,44 +2,8 @@ package ajr.scemplate
 
 import java.util.NoSuchElementException
 
-import ammonite.ops._
-import fastparse.WhitespaceApi
-import fastparse.core.Parsed
 
-
-object TemplateBuilder {
-  implicit def toStringValue(value: String) = StringValue(value)
-  implicit def toIntValue(value: Int) = IntValue(value)
-  implicit def toIntValue(value: Boolean) = BooleanValue(value)
-  implicit def toDoubleValue(value: Double) = DoubleValue(value)
-  implicit def seqToArrayValue(items: Seq[String]) = ArrayValue(items.map(StringValue(_)).toIndexedSeq)
-  implicit def seqIntToArrayValue(items: Seq[Int]) = ArrayValue(items.map(IntValue(_)).toIndexedSeq)
-  implicit def seqDoubleToArrayValue(items: Seq[Double]) = ArrayValue(items.map(DoubleValue(_)).toIndexedSeq)
-
-  implicit val showString = new Show[String] { def encode(v: String) = StringValue(v) }
-  implicit val showInt = new Show[Int] { def encode(v: Int) = IntValue(v) }
-  implicit val showBoolean = new Show[Boolean] { def encode(v: Boolean) = BooleanValue(v) }
-  def showArray[X](implicit lift: X => TemplateValue): Show[Seq[X]] =
-    new Show[Seq[X]] { def encode(v: Seq[X]) = ArrayValue(v.map(x => lift(x)).toIndexedSeq) }
-  implicit val showArrayString = showArray[String]
-
-  def function(fcn: TemplateValue => TemplateValue): FunctionSpec =
-    FunctionSpec(1, x => fcn(x(0)))
-
-  def function(fcn: (TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
-    FunctionSpec(2, x => fcn(x(0),x(1)))
-
-  def function(fcn: (TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
-    FunctionSpec(3, x => fcn(x(0),x(1),x(2)))
-
-  def function(fcn: (TemplateValue,TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
-    FunctionSpec(4, x => fcn(x(0),x(1),x(2),x(3)))
-
-  def function(fcn: (TemplateValue,TemplateValue,TemplateValue,TemplateValue,TemplateValue) => TemplateValue): FunctionSpec =
-    FunctionSpec(5, x => fcn(x(0),x(1),x(2),x(3),x(4)))
-}
-
-object Template {
+private object TemplateParser {
   val White = fastparse.WhitespaceApi.Wrapper{
     import fastparse.all._
     val ws = P(" " | "\t" | "\n").rep
@@ -113,19 +77,22 @@ object Template {
 }
 
 
-class Template(templateText: String, val instrument: Boolean = false) {
-  //import StringTemplate.White._
-  var totalOps = 0
-  private val instrumentFunction = (parser: fastparse.core.Parser[_,Char,String], index: Int, continuation: () => fastparse.core.Parsed[_, Char,String]) => {
+
+class Template(templateText: String, instrument: Boolean = false) {
+  import fastparse.core.Parsed
+  import fastparse.core.Parser
+
+  private var totalOps = 0
+  private val instrumentFunction = (parser: Parser[_,Char,String], index: Int, continuation: () => Parsed[_, Char,String]) => {
     totalOps += 1
     println(f"Call: ${parser.toString}%-20s $index%3d: ${templateText.drop(index).take(20).replaceAll("\n", "\\\\n")}")
   }
 
   def error = tree.left.toOption
 
-  val tree: Either[String, TemplateExpr] = {
+  private val tree: Either[String, TemplateExpr] = {
     val start = System.currentTimeMillis
-    Template.mainDoc.parse(templateText, instrument = if (instrument) instrumentFunction else null) match {
+    TemplateParser.mainDoc.parse(templateText, instrument = if (instrument) instrumentFunction else null) match {
       case Parsed.Success(output, _) =>
         val parseTime = System.currentTimeMillis - start
         if (instrument) {
@@ -143,7 +110,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
 
   if (instrument) println(s"Total ops: $totalOps")
 
-  def textPos(text: String, index: Int) = {
+  private def textPos(text: String, index: Int) = {
     val lines = text.take(index).split("\n")
     (lines.size, lines.last.length)
   }
@@ -184,12 +151,14 @@ class Template(templateText: String, val instrument: Boolean = false) {
     }
   }
 
-  def evalValue(value: Value, context: Context): TemplateValue = {
+  private def evalValue(value: Value, context: Context): TemplateValue = {
     value match  {
       case x: StringValue => x
       case x: IntValue => x
       case x: DoubleValue => x
       case x: BooleanValue => x
+      case x: ArrayValue => x
+      case x: MapValue => x
 
       case Variable(path) =>
         try {
@@ -204,7 +173,10 @@ class Template(templateText: String, val instrument: Boolean = false) {
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
-        val functionSpec = context.functions(name)
+        val functionSpec = context.functions.get(name) match {
+          case Some(func) => func
+          case None => throw new Exception(s"Unknown function: $name")
+        }
         if (paramValues.size != functionSpec.numParams)
           throw new Exception(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
         functionSpec.function(paramValues)
@@ -278,77 +250,6 @@ class Template(templateText: String, val instrument: Boolean = false) {
           case _ =>
             DoubleValue(a.toDouble % b.toDouble)
         }
-    }
-  }
-}
-
-import TemplateBuilder._
-
-object TemplateApp {
-  val num = 2
-  val fileName = s"test$num.tmpl"
-
-  val context = Context()
-    .withValues(
-      "dollars" -> 1000,
-      "age" -> 21,
-      "this" -> "THIS",
-      "that" -> "THAT",
-    )
-
-
-  val functions = Map(
-    "lowerCase" ->      function(_.toStr.toLowerCase),
-    "upperCase" ->      function(_.toStr.toUpperCase),
-    "currencyCommas" -> function(_.toStr.reverse.grouped(3).mkString(",").reverse),
-    "repeat" ->         function((s,m) => s.toStr * m.toInt),
-    "range" ->          function((s,e) => Range(s.toInt, e.toInt).toSeq)
-  )
-
-  val text: String = read! pwd / fileName
-
-  println("Compiling template")
-  val tmpl = new Template(text)
-  println("Compiled.")
-  println(tmpl.tree)
-  tmpl.error match {
-    case Some(err) =>
-      println("Invalid template")
-      println(err)
-
-    case None =>
-      println("Running")
-      if (false) {
-        var c = 0L
-        val s = System.currentTimeMillis
-        for(x <- 0L to 1000000L*4) {
-          tmpl.render(context)
-          c+=1
-        }
-        val total = System.currentTimeMillis - s
-        println(c, total.toDouble/1000)
-      }
-      else {
-        val secs = 60
-        val start = System.currentTimeMillis
-
-        val loopSize = 400000
-        val maxMillis = secs * 1000L
-        var count = 0
-        while((System.currentTimeMillis - start) < maxMillis) {
-          val s = System.currentTimeMillis
-          for(i <- 0 until loopSize) {
-            val result = tmpl.render(context)
-            count += 1
-            //println(result)
-          }
-          val d = System.currentTimeMillis-s
-          println(d)
-
-        }
-        val total = System.currentTimeMillis - start
-        val perSecond = count.toDouble / (total.toDouble / 1000.0)
-        println(s"count=$count, $perSecond p/s, total: $total")
     }
   }
 }

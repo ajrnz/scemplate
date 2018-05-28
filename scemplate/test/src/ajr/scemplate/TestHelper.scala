@@ -1,12 +1,13 @@
 package ajr.scemplate
 import utest._
 
-import ajr.scemplate.TemplateBuilder._
+import ajr.scemplate._
+import ajr.scemplate.implicits._
 
 case class Person(name: String, age: Int, awards: Seq[String] = Seq.empty[String])
 case class Employee(person: Person, salary: Int, isManager: Boolean)
 object Employee {
-  implicit def toPV(value: Employee): TemplateValue = CaseClassEncoder.gen[Employee].encode(value)
+  implicit def toTV(value: Employee): TemplateValue = CaseClassEncoder.gen[Employee].encode(value)
 }
 
 

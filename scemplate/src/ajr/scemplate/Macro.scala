@@ -2,20 +2,19 @@ package ajr.scemplate
 
 import language.experimental.macros, magnolia._
 
-trait Show[T] { def encode(value: T): TemplateValue }
+trait Encode[T] { def encode(value: T): TemplateValue }
 
 object CaseClassEncoder {
-  type Typeclass[T] = Show[T]
+  type Typeclass[T] = Encode[T]
 
-  def combine[T](ctx: CaseClass[Show, T]): Show[T] = new Show[T] {
-    println(s"combine: $ctx")
+  def combine[T](ctx: CaseClass[Encode, T]): Encode[T] = new Encode[T] {
     def encode(value: T): TemplateValue = MapValue(ctx.parameters.map { p =>
       p.label -> p.typeclass.encode(p.dereference(value))
     }.toMap)
   }
 
   // required but not used
-  def dispatch[T](ctx: SealedTrait[Show, T]): Show[T] = ???
+  def dispatch[T](ctx: SealedTrait[Encode, T]): Encode[T] = ???
 
-  implicit def gen[T]: Show[T] = macro Magnolia.gen[T]
+  implicit def gen[T]: Encode[T] = macro Magnolia.gen[T]
 }
