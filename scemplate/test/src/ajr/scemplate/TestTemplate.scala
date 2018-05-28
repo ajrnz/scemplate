@@ -32,7 +32,6 @@ object TemplateTest extends TestSuite with TestHelper {
       'whitespace2 - validate("${(1+2)*3-4 == 0}", "false")
     }
 
-
     'idents - {
       invalid("$20one")
       invalid("${20one}")

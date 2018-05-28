@@ -1,5 +1,7 @@
 package ajr.scemplate
 
+import java.util.NoSuchElementException
+
 import ammonite.ops._
 import fastparse.WhitespaceApi
 //import fastparse.WhitespaceApi
@@ -14,6 +16,13 @@ object TemplateBuilder {
   implicit def toIntValue(value: Boolean) = BooleanValue(value)
   implicit def seqToArrayValue(items: Seq[String]) = ArrayValue(items.toIndexedSeq.map(StringValue(_)))
   implicit def seqIntToArrayValue(items: Seq[Int]) = ArrayValue(items.toIndexedSeq.map(IntValue(_)))
+
+  implicit val showString = new Show[String] { def encode(v: String) = StringValue(v) }
+  implicit val showInt = new Show[Int] { def encode(v: Int) = IntValue(v) }
+  implicit val showBoolean = new Show[Boolean] { def encode(v: Boolean) = BooleanValue(v) }
+  def showArray[X](implicit lift: X => PrimitiveValue): Show[Seq[X]] =
+    new Show[Seq[X]] { def encode(v: Seq[X]) = ArrayValue(v.map(x => lift(x)).toIndexedSeq) }
+  implicit val showArrayString = showArray[String]
 }
 
 object Template {
@@ -40,26 +49,26 @@ object Template {
   val boolean = P(("true" | "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
   val literal = P(integer | string | boolean)
-  val variable: P[Value] = P(ident.map(Variable))
+  val variable: P[Value] = P(ident ~ ("." ~ ident).rep).map(x => Variable(x._1 +: x._2))
   val value: P[Value] = P(literal | variable)
   val function = P((ident ~~ "(" ~ value.rep(sep = ",") ~ ")").map(Function.tupled))
 
   val brackets: P[Value] = P("(" ~/ expression ~ ")")
   val valueType: P[Value] = P("!".!.? ~ (function | brackets | value)).map{x=> x._1 match {
-    case Some(_) => Negation(x._2)
+    case Some(_) => Negate(x._2)
     case None    => x._2
   }}
 
   val multiDivMod: P[Value] = P(valueType ~ (("*" | "/" | "%").! ~ valueType).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) => op match {
-      case "*" => Multiplication(c, value)
-      case "/" => Division(c, value)
+      case "*" => Multiply(c, value)
+      case "/" => Divide(c, value)
       case "%" => Modulus(c, value)
     }}
   }
   val addSub: P[Value] = P(multiDivMod ~ (("+"|"-").! ~ multiDivMod).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
-      if (op == "+") Addition(c, value) else Subtraction(c, value)
+      if (op == "+") Add(c, value) else Subtract(c, value)
     }
   }
   val andOr: P[Value] = P(addSub ~ (("&&"|"||").! ~ addSub).rep).map{x =>
@@ -150,7 +159,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
       case ForLoop(index, array, expr) =>
         val prim = evalValue(array, context)
         prim.toArray.value.foreach{ item =>
-          render(expr, context.copy(values = context.values + (index -> item)), sb)
+          render(expr, context.copy(values = MapValue(context.values.value + (index -> item))), sb)
         }
 
       case IfThenElse(pred, thenExpr, elseExpr) =>
@@ -166,8 +175,16 @@ class Template(templateText: String, val instrument: Boolean = false) {
       case x: IntValue => x
       case x: BooleanValue => x
 
-      case Variable(name) =>
-        context.values(name)
+      case Variable(path) =>
+        try {
+          path.foldLeft[PrimitiveValue](context.values){ (ctx, key) =>
+            ctx.toMap(key)
+          }
+        }
+        catch {
+          case _: NoSuchElementException =>
+            throw new NoSuchElementException(s"Key not found ${path.mkString(".")}")
+        }
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
@@ -192,26 +209,26 @@ class Template(templateText: String, val instrument: Boolean = false) {
         })
         res
 
-      case Negation(value) =>
+      case Negate(value) =>
         val v = evalValue(value, context).toBoolean
         BooleanValue(!v.value)
 
-      case op: Addition =>
+      case op: Add =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
         IntValue(a.toInt + b.toInt)
 
-      case op: Subtraction =>
+      case op: Subtract =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
         IntValue(a.toInt - b.toInt)
 
-      case op: Multiplication =>
+      case op: Multiply =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
         IntValue(a.toInt * b.toInt)
 
-      case op: Division =>
+      case op: Divide =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
         IntValue(a.toInt / b.toInt)
@@ -229,15 +246,16 @@ object TemplateApp {
   val num = 2
   val fileName = s"test$num.tmpl"
 
-  val dict = Map[String,PrimitiveValue](
-    "dollars" -> IntValue(1000),
-    "age" -> IntValue(21),
-    "this" -> StringValue("THIS"),
-    "that" -> StringValue("THAT"),
-    "contract.name.first" -> StringValue("Fred"),
-    "people" -> StringValue("andrew,fred,jim,sally,brenda"),
-    "titleString" -> StringValue("This is my title")
-  ).withDefault(x => throw new Exception(s"Missing variable: $x"))
+  val context = Context()
+    .withValues(
+      "dollars" -> IntValue(1000),
+      "age" -> IntValue(21),
+      "this" -> StringValue("THIS"),
+      "that" -> StringValue("THAT"),
+      "contract.name.first" -> StringValue("Fred"),
+      "people" -> StringValue("andrew,fred,jim,sally,brenda"),
+      "titleString" -> StringValue("This is my title")
+    )
 
 
   val functions = Map(
@@ -247,7 +265,6 @@ object TemplateApp {
     "range" -> FunctionSpec(2, x => ArrayValue(Range(x(0).toInt, x(1).toInt).map(IntValue).toIndexedSeq))
   )
 
-  val context = Context(dict, functions)
 
   val text: String = read! pwd / fileName
 

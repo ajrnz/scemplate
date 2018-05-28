@@ -24,7 +24,8 @@ object scemplate extends ScalaModule with ScemplatePlublishModule {
 
   def ivyDeps = Agg(
     ivy"com.lihaoyi::fastparse:1.0.0",
-    ivy"com.lihaoyi::ammonite-ops:1.1.2"
+    ivy"com.lihaoyi::ammonite-ops:1.1.2",
+    ivy"com.propensive::magnolia:0.7.1"
   )
 
   object test extends Tests {

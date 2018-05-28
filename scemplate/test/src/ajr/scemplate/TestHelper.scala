@@ -3,6 +3,13 @@ import utest._
 
 import ajr.scemplate.TemplateBuilder._
 
+case class Person(name: String, age: Int, awards: Seq[String] = Seq.empty[String])
+case class Employee(person: Person, salary: Int, isManager: Boolean)
+object Employee {
+  implicit def toPV(value: Employee): PrimitiveValue = CaseClassEncoder.gen[Employee].encode(value)
+}
+
+
 trait TestHelper {
   val context = Context()
     .withValues(
@@ -18,7 +25,8 @@ trait TestHelper {
       "contract.name.first" -> "Fred",
       "people" -> List("andrew","fred","jim","sally","brenda"),
       "oddNumbers" -> Seq(1,3,5,7,9),
-      "titleString" -> "This is my title"
+      "titleString" -> "This is my title",
+      "user" -> Employee(Person("Andrew", 21, Seq("superstar", "humble")), 80000, true)
     )
     .withFunctions(
       "lowerCase" ->      function(_.toStr.toLowerCase),
