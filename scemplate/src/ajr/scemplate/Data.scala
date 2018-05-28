@@ -11,8 +11,9 @@ case class IfThenElse(pred: Value, thenExpr: TemplateExpr, elseExpr: TemplateExp
 sealed trait Value extends TemplateExpr
 
 sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
-  def toInt: Int = sys.error(s"$this cannot be converted to an integer")
   def toStr: String
+  def toInt: Int = sys.error(s"$this cannot be converted to an integer")
+  def toDouble: Double = sys.error(s"$this cannot be converted to a double")
   def toBoolean: BooleanValue = sys.error(s"$this cannot be converted to a boolean")
   def toArray: ArrayValue = sys.error(s"$this cannot be converted to an array")
   def toMap: MapValue = sys.error(s"$this cannot be converted to a map")
@@ -24,22 +25,38 @@ case class StringValue(value: String) extends TemplateValue {
     case _ => throw new Exception(s"Can't compare string $this with $that")
   }
   override def toStr = value
+  override def toInt = value.toInt
+  override def toDouble = value.toDouble
 }
 
 case class IntValue(value: Int) extends TemplateValue {
   def compare(that: TemplateValue): Int = that match {
     case IntValue(thatValue) =>
-      value - thatValue
+      value.compare(thatValue)
     case _ => throw new Exception(s"int: Can't compare int $this with $that")
   }
   override def toStr = value.toString
   override def toInt = value
+  override def toDouble = value.toDouble
   override def toBoolean: BooleanValue = BooleanValue(value != 0)
+}
+
+case class DoubleValue(value: Double) extends TemplateValue {
+  def compare(that: TemplateValue): Int = that match {
+    case DoubleValue(thatValue) =>
+      value.compare(thatValue)
+    case _ => throw new Exception(s"int: Can't compare int $this with $that")
+  }
+  override def toStr = value.toString
+  override def toInt = value.toInt
+  override def toDouble = value
+  override def toBoolean: BooleanValue = BooleanValue(value != 0.0)
 }
 
 case class BooleanValue(value: Boolean) extends TemplateValue {
   def compare(that: TemplateValue): Int = that match {
-    case BooleanValue(thatValue) => if (value == thatValue) 0 else 1
+    case BooleanValue(thatValue) =>
+      value.compare(thatValue)
     case _ => throw new Exception(s"Can't compare boolean $this with $that")
   }
   override def toStr = value.toString

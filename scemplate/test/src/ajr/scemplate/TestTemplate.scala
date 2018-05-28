@@ -14,6 +14,9 @@ object TemplateTest extends TestSuite with TestHelper {
       'literalString - validate("""${"string"}""", "string")
       'literalIntSignPos - validate("${+12}", "12")
       'literalIntSignNeg - validate("${-12}", "-12")
+      'literalDouble - validate("${0.2}", "0.2")
+      'literalDoubleNeg - validate("${-0.2}", "-0.2")
+      'literalDoublePos - validate("${+0.2}", "0.2")
       'literalBooleanTrue - validate("${true}", "true")
       'literalBooleanFalse - validate("${false}", "false")
       'variableString - validate("$OneString", "1")
@@ -43,13 +46,27 @@ object TemplateTest extends TestSuite with TestHelper {
     }
 
     'expressions - {
-      'addition - validate("${1+2}", "3")
-      'subtraction - validate("${5-2}", "3")
-      'multiplication - validate("${5*2}", "10")
-      'division - validate("${10/4}", "2")
-      'modulus - validate("${10%3}", "1")
-      'precedence - validate("${1+2*3-4}", "3")
-      'brackets - validate("${(1+2)*3-4}", "5")
+      'int - {
+        'addition - validate("${1+2}", "3")
+        'subtraction - validate("${5-2}", "3")
+        'multiplication - validate("${5*2}", "10")
+        'division - validate("${10/4}", "2")
+        'modulus - validate("${10%3}", "1")
+        'precedence - validate("${1+2*3-4}", "3")
+        'brackets - validate("${(1+2)*3-4}", "5")
+        'mixedTypes - validate("${10*0.5}", "5.0")
+        'mixedTypes - validate("${0.5*10}", "5.0")
+      }
+      'double - {
+        // no ideal comparing doubles like this, I know
+        'addition - validate("${1.4+2.2}", "3.6")
+        'subtraction - validate("${5.5-2.5}", "3.0")
+        'multiplication - validate("${5.5*2.0}", "11.0")
+        'division - validate("${10.0/4.0}", "2.5")
+        'modulus - validate("${10.0%3.0}", "1.0")
+        'mixedTypes - validate("${10*0.5}", "5.0")
+        'mixedTypes - validate("${0.5*10}", "5.0")
+      }
     }
 
     'conditions - {

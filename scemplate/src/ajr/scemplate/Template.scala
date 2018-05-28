@@ -11,8 +11,10 @@ object TemplateBuilder {
   implicit def toStringValue(value: String) = StringValue(value)
   implicit def toIntValue(value: Int) = IntValue(value)
   implicit def toIntValue(value: Boolean) = BooleanValue(value)
-  implicit def seqToArrayValue(items: Seq[String]) = ArrayValue(items.toIndexedSeq.map(StringValue(_)))
-  implicit def seqIntToArrayValue(items: Seq[Int]) = ArrayValue(items.toIndexedSeq.map(IntValue(_)))
+  implicit def toDoubleValue(value: Double) = DoubleValue(value)
+  implicit def seqToArrayValue(items: Seq[String]) = ArrayValue(items.map(StringValue(_)).toIndexedSeq)
+  implicit def seqIntToArrayValue(items: Seq[Int]) = ArrayValue(items.map(IntValue(_)).toIndexedSeq)
+  implicit def seqDoubleToArrayValue(items: Seq[Double]) = ArrayValue(items.map(DoubleValue(_)).toIndexedSeq)
 
   implicit val showString = new Show[String] { def encode(v: String) = StringValue(v) }
   implicit val showInt = new Show[Int] { def encode(v: Int) = IntValue(v) }
@@ -55,12 +57,13 @@ object Template {
   val ident = P((identStart ~~ identChar.?).!).filter(!reserved(_))
   val dollar = P("$").map(_ => Literal("$"))
 
+  val string = P("\"" ~~ CharsWhile(_ != '"').! ~~ "\"").map(StringValue(_)) // XXX no way of escaping quotes
   val digit = P(CharPred(_.isDigit))
   val integer = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
-  val string = P("\"" ~~ CharsWhile(_ != '"').! ~~ "\"").map(StringValue(_)) // XXX no way of escaping quotes
+  val double = P(("+" | "-").? ~~ digit.repX(min=1) ~~ "." ~~ digit.repX(min=1)).!.map(v => DoubleValue(v.toDouble))
   val boolean = P(("true" | "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
-  val literal = P(integer | string | boolean)
+  val literal = P(double | integer | string | boolean)
   val variable: P[Value] = P(ident ~ ("." ~ ident).rep).map(x => Variable(x._1 +: x._2))
   val value: P[Value] = P(literal | variable)
   val function = P((ident ~~ "(" ~ value.rep(sep = ",") ~ ")").map(Function.tupled))
@@ -185,6 +188,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
     value match  {
       case x: StringValue => x
       case x: IntValue => x
+      case x: DoubleValue => x
       case x: BooleanValue => x
 
       case Variable(path) =>
@@ -228,27 +232,52 @@ class Template(templateText: String, val instrument: Boolean = false) {
       case op: Add =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
-        IntValue(a.toInt + b.toInt)
+        (a,b) match {
+          case (_: IntValue, _: IntValue) =>
+            IntValue(a.toInt + b.toInt)
+          case _ =>
+            DoubleValue(a.toDouble + b.toDouble)
+        }
 
       case op: Subtract =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
-        IntValue(a.toInt - b.toInt)
+        (a,b)  match {
+          case (_: IntValue, _: IntValue) =>
+            IntValue(a.toInt - b.toInt)
+          case _ =>
+            DoubleValue(a.toDouble - b.toDouble)
+        }
 
       case op: Multiply =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
-        IntValue(a.toInt * b.toInt)
+        (a,b)  match {
+          case (_: IntValue, _: IntValue) =>
+            IntValue(a.toInt * b.toInt)
+          case _ =>
+            DoubleValue(a.toDouble * b.toDouble)
+        }
 
       case op: Divide =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
-        IntValue(a.toInt / b.toInt)
+        (a,b)  match {
+          case (_: IntValue, _: IntValue) =>
+            IntValue(a.toInt / b.toInt)
+          case _ =>
+            DoubleValue(a.toDouble / b.toDouble)
+        }
 
       case op: Modulus =>
         val a = evalValue(op.a, context)
         val b = evalValue(op.b, context)
-        IntValue(a.toInt % b.toInt)
+        (a,b)  match {
+          case (_: IntValue, _: IntValue) =>
+            IntValue(a.toInt % b.toInt)
+          case _ =>
+            DoubleValue(a.toDouble % b.toDouble)
+        }
     }
   }
 }
