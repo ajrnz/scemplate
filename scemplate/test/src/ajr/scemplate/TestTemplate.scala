@@ -2,8 +2,6 @@ package ajr.scemplate
 
 import utest._
 
-import ajr.scemplate.implicits._
-
 object TemplateTest extends TestSuite with TestHelper {
 
   val tests = Tests{
@@ -39,15 +37,15 @@ object TemplateTest extends TestSuite with TestHelper {
     }
 
     'functions - {
-      'oneparam - validate("${lowerCase(this)}", "this")
-      'twoparam - validate("""${repeat("abc", 3)}""", "abcabcabc")
+      'oneParam - validate("${lowerCase(this)}", "this")
+      'twoParam - validate("""${repeat("abc", 3)}""", "abcabcabc")
       'toFewParams - intercept[Exception] { validate("${lowerCase()}", "this") }
     }
 
     'expressions - {
       'addition - validate("${1+2}", "3")
       'subtraction - validate("${5-2}", "3")
-      'multiplicaton - validate("${5*2}", "10")
+      'multiplication - validate("${5*2}", "10")
       'division - validate("${10/4}", "2")
       'modulus - validate("${10%3}", "1")
       'precedence - validate("${1+2*3-4}", "3")

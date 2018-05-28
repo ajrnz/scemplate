@@ -2,8 +2,6 @@ package ajr.scemplate
 
 import utest._
 
-import ajr.scemplate.implicits._
-
 object TestForLoop extends TestSuite with TestHelper {
   val tests = Tests {
     'constructs - {

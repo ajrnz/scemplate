@@ -1,10 +1,5 @@
 package ajr.scemplate
 
-object implicits {
-  implicit def toStringValue(value: String) = StringValue(value)
-  implicit def toIntValue(value: Int) = IntValue(value)
-  implicit def toBooleanValue(value: Boolean) = BooleanValue(value)
-}
 
 sealed trait TemplateExpr
 case class Sequence(items: Seq[TemplateExpr]) extends TemplateExpr
@@ -34,7 +29,6 @@ case class StringValue(value: String) extends PrimitiveValue {
 case class IntValue(value: Int) extends PrimitiveValue {
   def compare(that: Value): Int = that match {
     case IntValue(thatValue) =>
-      println(s"Int compare $value vs $thatValue")
       value - thatValue
     case _ => throw new Exception(s"int: Can't compare int $this with $that")
   }

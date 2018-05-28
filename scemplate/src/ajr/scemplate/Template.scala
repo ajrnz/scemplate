@@ -4,9 +4,6 @@ import java.util.NoSuchElementException
 
 import ammonite.ops._
 import fastparse.WhitespaceApi
-//import fastparse.WhitespaceApi
-
-//import fastparse.core._
 import fastparse.core.Parsed
 
 
@@ -23,6 +20,21 @@ object TemplateBuilder {
   def showArray[X](implicit lift: X => PrimitiveValue): Show[Seq[X]] =
     new Show[Seq[X]] { def encode(v: Seq[X]) = ArrayValue(v.map(x => lift(x)).toIndexedSeq) }
   implicit val showArrayString = showArray[String]
+
+  def function(fcn: PrimitiveValue => PrimitiveValue): FunctionSpec =
+    FunctionSpec(1, x => fcn(x(0)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(2, x => fcn(x(0),x(1)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(3, x => fcn(x(0),x(1),x(2)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(4, x => fcn(x(0),x(1),x(2),x(3)))
+
+  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
+    FunctionSpec(5, x => fcn(x(0),x(1),x(2),x(3),x(4)))
 }
 
 object Template {
@@ -45,7 +57,7 @@ object Template {
 
   val digit = P(CharPred(_.isDigit))
   val integer = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
-  val string = P("\"" ~~ CharsWhile(_ != '"').! ~~ "\"").map(StringValue) // XXX no way of escaping quotes
+  val string = P("\"" ~~ CharsWhile(_ != '"').! ~~ "\"").map(StringValue(_)) // XXX no way of escaping quotes
   val boolean = P(("true" | "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
   val literal = P(integer | string | boolean)
@@ -241,6 +253,7 @@ class Template(templateText: String, val instrument: Boolean = false) {
   }
 }
 
+import TemplateBuilder._
 
 object TemplateApp {
   val num = 2
@@ -248,23 +261,20 @@ object TemplateApp {
 
   val context = Context()
     .withValues(
-      "dollars" -> IntValue(1000),
-      "age" -> IntValue(21),
-      "this" -> StringValue("THIS"),
-      "that" -> StringValue("THAT"),
-      "contract.name.first" -> StringValue("Fred"),
-      "people" -> StringValue("andrew,fred,jim,sally,brenda"),
-      "titleString" -> StringValue("This is my title")
+      "dollars" -> 1000,
+      "age" -> 21,
+      "this" -> "THIS",
+      "that" -> "THAT",
     )
 
 
   val functions = Map(
-    "lowerCase" -> FunctionSpec(1, x => StringValue(x(0).toStr.toLowerCase)),
-    "upperCase" -> FunctionSpec(1, x => StringValue(x(0).toStr.toUpperCase)),
-    "currencyCommas" -> FunctionSpec(1, x => StringValue(x(0).toStr.reverse.grouped(3).mkString(",").reverse)),
-    "range" -> FunctionSpec(2, x => ArrayValue(Range(x(0).toInt, x(1).toInt).map(IntValue).toIndexedSeq))
+    "lowerCase" ->      function(_.toStr.toLowerCase),
+    "upperCase" ->      function(_.toStr.toUpperCase),
+    "currencyCommas" -> function(_.toStr.reverse.grouped(3).mkString(",").reverse),
+    "repeat" ->         function((s,m) => s.toStr * m.toInt),
+    "range" ->          function((s,e) => Range(s.toInt, e.toInt).toSeq)
   )
-
 
   val text: String = read! pwd / fileName
 

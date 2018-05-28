@@ -32,7 +32,7 @@ trait TestHelper {
       "lowerCase" ->      function(_.toStr.toLowerCase),
       "upperCase" ->      function(_.toStr.toLowerCase),
       "currencyCommas" -> function(_.toStr.reverse.grouped(3).mkString(",").reverse),
-      "range" ->          function((s,e) => ArrayValue(Range(s.toInt, e.toInt).map(IntValue))),
+      "range" ->          function((s,e) => Range(s.toInt, e.toInt).toSeq),
       "repeat" ->         function((a,b) => a.toStr * b.toInt)
     )
 
@@ -50,20 +50,4 @@ trait TestHelper {
     val t = new Template(tmpl, instrument = instrument)
     assert(t.error.isDefined)
   }
-
-  def function(fcn: PrimitiveValue => PrimitiveValue): FunctionSpec =
-    FunctionSpec(1, x => fcn(x(0)))
-
-  def function(fcn: (PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
-    FunctionSpec(2, x => fcn(x(0),x(1)))
-
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
-    FunctionSpec(3, x => fcn(x(0),x(1),x(2)))
-
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
-    FunctionSpec(4, x => fcn(x(0),x(1),x(2),x(3)))
-
-  def function(fcn: (PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue,PrimitiveValue) => PrimitiveValue): FunctionSpec =
-    FunctionSpec(5, x => fcn(x(0),x(1),x(2),x(3),x(4)))
-
 }

@@ -10,5 +10,18 @@ object TestCaseClasses extends TestSuite with TestHelper {
       'subFieldInt - validate("${user.person.age}", "21")
       'invalidField - intercept[NoSuchElementException] { validate("${user.invalid}", "") }
     }
+
+    'caseClassConversion - {
+      val ccEnc = context.values.value("user")
+      val expt = MapValue(Map(
+        "person" -> MapValue(Map(
+          "name" -> StringValue("Andrew"),
+          "age" -> IntValue(21),
+          "awards" -> ArrayValue(Vector(StringValue("superstar"), StringValue("humble"))))),
+        "salary" -> IntValue(80000),
+        "isManager" -> BooleanValue(true))
+      )
+      ccEnc ==> expt
+    }
   }
 }
