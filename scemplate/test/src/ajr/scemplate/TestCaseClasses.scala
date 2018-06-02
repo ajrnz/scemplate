@@ -3,6 +3,10 @@ package ajr.scemplate
 import utest._
 
 object TestCaseClasses extends TestSuite with TestHelper {
+  override def utestAfterAll() = {
+    opCheck(178)
+  }
+
   val tests = Tests {
     'caseClasses - {
       'fieldInt - validate("${user.salary}", "80000")

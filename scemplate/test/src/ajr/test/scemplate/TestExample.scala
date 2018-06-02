@@ -10,6 +10,8 @@ import utest.{Show => uShow, _}
 
 object TestExample extends TestSuite
 {
+  var opCounter = 0
+
   case class ReportInfo(title: String, page: Int, pages: Int, footer:String)
   case class Person(name: String, age: Int)
 
@@ -98,10 +100,13 @@ object TestExample extends TestSuite
 
   val tests = Tests {
     'example - {
-      val template = new Template(templateText)
+      val template = new Template(templateText, 1)
       template.error ==> None
       val result = template.render(context)
       result ==> expected
+
+      println(s"Example ops: ${template.parseOps}")
+      assert(template.parseOps < 900)
     }
     'performance - {
       if (false) {

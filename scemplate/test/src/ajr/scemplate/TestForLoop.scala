@@ -3,6 +3,10 @@ package ajr.scemplate
 import utest._
 
 object TestForLoop extends TestSuite with TestHelper {
+  override def utestAfterAll() = {
+    opCheck(1263)
+  }
+
   val tests = Tests {
     'constructs - {
       'forLoop - {

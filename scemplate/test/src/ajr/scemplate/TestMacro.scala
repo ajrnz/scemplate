@@ -3,6 +3,10 @@ package ajr.scemplate
 import utest._
 
 object TestMacro extends TestSuite with TestHelper {
+  override def utestAfterAll() = {
+    opCheck(1665)
+  }
+
   val tests = Tests {
     'macros - {
       'define0 - {

@@ -11,7 +11,7 @@ object Employee {
 }
 
 
-trait TestHelper {
+trait TestHelper extends TestSuite {
   val context = Context()
     .withValues(
       "OneString" -> "1",
@@ -37,12 +37,14 @@ trait TestHelper {
       "repeat" ->         function((a,b) => a.toStr * b.toInt)
     )
 
-  val instrument = false
+  var totalOps = 0
+  val instrumentLevel = 1
 
   def quoteWhiteSpace(str: String) = str.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t")
 
   def validate(tmpl: String, expt: String) = {
-    val t = new Template(tmpl, instrument = instrument)
+    val t = new Template(tmpl, instrumentLevel)
+    totalOps += t.parseOps
     val err = t.error
     err ==> None
     val result = t.render(context)
@@ -52,7 +54,13 @@ trait TestHelper {
   }
 
   def invalid(tmpl: String) = {
-    val t = new Template(tmpl, instrument = instrument)
+    val t = new Template(tmpl, instrumentLevel)
+    totalOps += t.parseOps
     assert(t.error.isDefined)
+  }
+
+  def opCheck(expected: Int) = {
+    val percDiff = ((totalOps.toDouble - expected)/expected)*100
+    println(f"Total ops: $totalOps (expected $expected) $percDiff%4.1f%%")
   }
 }

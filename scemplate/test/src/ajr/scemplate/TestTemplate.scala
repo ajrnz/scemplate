@@ -4,6 +4,11 @@ import utest._
 
 object TemplateTest extends TestSuite with TestHelper {
 
+  override def utestAfterAll() = {
+    opCheck(3886)
+  }
+
+
   val tests = Tests{
     'basics - {
       'string - validate("test", "test")
@@ -31,6 +36,11 @@ object TemplateTest extends TestSuite with TestHelper {
     'misc - {
       'whitespace - validate("${ ( 1 + 2 ) * 3 - 4 }", "5")
       'whitespace2 - validate("${(1+2)*3-4 == 0}", "false")
+      'quotes - validate("""${"test" + "fire"}""", "testfire")
+      'quoteQuote - validate("""${"Quote \" here"}""", """Quote " here""")
+      'quoteTab - validate("""${"Tab \t char"}""", "Tab \t char")
+      'quoteUnicode - validate("""${"\u00a9"}""", "\u00a9")
+      'stringEndsWhitespace - validate("""${" test "}""", " test ")
     }
 
     'idents - {

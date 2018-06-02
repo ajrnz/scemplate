@@ -6,8 +6,8 @@ import java.util.NoSuchElementException
 private object TemplateParser {
   val White = fastparse.WhitespaceApi.Wrapper{
     import fastparse.all._
-    val wsOpt = P(" " | "\t" | "\n").rep
-    NoTrace(wsOpt)
+    val wsRep = P(CharIn(" \t\r\n").rep)
+    NoTrace(wsRep)
   }
 
   import fastparse.noApi._
@@ -15,25 +15,33 @@ private object TemplateParser {
 
   val reserved = Set("endfor", "endif", "endmacro", "else", "true", "false")
 
-  val ws = P(" " | "\t" | "\n").rep(min=1)
-  val ccx: P[Unit] = "}" ~~ "\n".?
-  val identStart = CharPred(x => x.isLetter || x == '_')
-  val identChar = CharsWhile(x => x.isLetterOrDigit || x == '_')
-  val ident = P((identStart ~~ identChar.?).!).filter(!reserved(_))
-  val dollar = P("$").map(_ => Literal("$"))
+  val ws            = P(CharIn(" \t\r\n"))
+  val ccx           = "}" ~~ "\n".?
+  val identStart    = CharPred(x => x.isLetter || x == '_')
+  val identChar     = CharsWhile(x => x.isLetterOrDigit || x == '_')
+  val ident         = P((identStart ~~ identChar.?).!).filter(!reserved(_)).opaque("identifier")
+  val dollar        = P("$").map(_ => Literal("$"))
 
-  val string = P("\"" ~~ CharsWhile(_ != '"').! ~~ "\"").map(StringValue(_)) // XXX no way of escaping quotes
-  val digit = P(CharPred(_.isDigit))
-  val integer = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
-  val double = P(("+" | "-").? ~~ digit.repX(min=1) ~~ "." ~~ digit.repX(min=1)).!.map(v => DoubleValue(v.toDouble))
-  val boolean = P(("true" | "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
+  val hexDigit      = P(CharIn('0'to'9', 'a'to'f', 'A'to'F'))
+  val unicodeEscape = P("u" ~~ (hexDigit ~~ hexDigit ~~ hexDigit ~~ hexDigit).!)
+    .map(h => Character.valueOf(Integer.parseInt(h, 16).toChar).toString)
+  val charEscape    = P(CharIn("tbnrf'\"\\").!.map(c => "\t\b\n\r\f\'\"\\"("tbnrf'\"\\".indexOf(c(0))).toString))
+  val escape        = P( "\\" ~~ (charEscape | unicodeEscape) )
+  val strChars      = P(CharsWhile(c => c != '"' && c != '\\').!)
+  val string        = P("\"" ~~ (strChars | escape).repX ~~ "\"").map(x => StringValue(x.mkString))
 
-  val literal = P(double | integer | string | boolean)
-  val variable: P[Value] = P(ident ~ ("." ~ ident).rep).map(x => Variable(x._1 +: x._2))
-  val value: P[Value] = P(literal | variable)
-  val function = P((ident ~~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
+  val digit         = P(CharPred(_.isDigit))
+  val integer       = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
+  val double        = P(("+" | "-").? ~~ digit.repX(min=1) ~~ "." ~~ digit.repX(min=1)).!.map(v => DoubleValue(v.toDouble))
+  val boolean       = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
-  val brackets: P[Value] = P("(" ~/ expression ~ ")")
+  val literal       = P(double | integer | string | boolean)
+  val variable      = P(ident ~~ ("." ~~ ident).repX).map(x => Variable(x._1 +: x._2))
+  val value         = P(literal | variable)
+  val function      = P((ident ~~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
+
+  val brackets      = P("(" ~/ expression ~ ")")
+
   val valueType: P[Value] = P("!".!.? ~ (function | brackets | value)).map{x=> x._1 match {
     case Some(_) => Negate(x._2)
     case None    => x._2
@@ -81,24 +89,27 @@ private object TemplateParser {
 
 
 
-class Template(templateText: String, instrument: Boolean = false) {
+class Template(templateText: String, instrumentLevel: Int = 0) {
   import fastparse.core.Parsed
   import fastparse.core.Parser
 
   private var totalOps = 0
+  def parseOps = totalOps
+
   private val instrumentFunction = (parser: Parser[_,Char,String], index: Int, continuation: () => Parsed[_, Char,String]) => {
     totalOps += 1
-    println(f"Call: ${parser.toString}%-20s $index%3d: ${templateText.drop(index).take(20).replaceAll("\n", "\\\\n")}")
+    if (instrumentLevel>1)
+      println(f"Call: ${parser.toString}%-20s $index%3d: ${templateText.drop(index).take(20).replaceAll("\n", "\\\\n")}")
   }
 
   def error = tree.left.toOption
 
   private val tree: Either[String, TemplateExpr] = {
     val start = System.currentTimeMillis
-    TemplateParser.mainDoc.parse(templateText, instrument = if (instrument) instrumentFunction else null) match {
+    TemplateParser.mainDoc.parse(templateText, instrument = if (instrumentLevel>0) instrumentFunction else null) match {
       case Parsed.Success(output, _) =>
         val parseTime = System.currentTimeMillis - start
-        if (instrument) {
+        if (instrumentLevel>1) {
           println(s"ParseTime: $parseTime")
           println(s"Total ops: $totalOps")
           println(output)
@@ -106,9 +117,9 @@ class Template(templateText: String, instrument: Boolean = false) {
         Right(output)
 
       case err@Parsed.Failure(last, index, extra) =>
-      if (instrument) System.err.println(extra.traced.stack.mkString("\n"))
-      val currentContext = templateText.drop(index).take(20).replaceAll("\n", "\\\\n")
-      Left(s"Error failed expecting $last at pos $index ${textPos(templateText,index)}: $currentContext...")
+        if (instrumentLevel>1) System.err.println(extra.traced.stack.mkString("\n"))
+        val currentContext = templateText.drop(index).take(20).replaceAll("\n", "\\\\n")
+        Left(s"Error failed expecting $last at pos $index ${textPos(templateText,index)}: $currentContext...")
     }
   }
 
@@ -224,8 +235,18 @@ class Template(templateText: String, instrument: Boolean = false) {
         (a,b) match {
           case (_: IntValue, _: IntValue) =>
             IntValue(a.toInt + b.toInt)
-          case _ =>
+
+          case (_: StringValue, _: StringValue) =>
+            StringValue(a.toStr + b.toStr)
+
+          case (_: IntValue, _: IntValue) |
+               (_: IntValue, _: DoubleValue) |
+               (_: DoubleValue, _: IntValue) |
+               (_: DoubleValue, _: DoubleValue) =>
             DoubleValue(a.toDouble + b.toDouble)
+
+          case _ =>
+            throw new Exception(s"Cannot add $a to $b")
         }
 
       case op: Subtract =>
