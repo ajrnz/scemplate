@@ -6,15 +6,16 @@ import java.util.NoSuchElementException
 private object TemplateParser {
   val White = fastparse.WhitespaceApi.Wrapper{
     import fastparse.all._
-    val ws = P(" " | "\t" | "\n").rep
-    NoTrace(ws)
+    val wsOpt = P(" " | "\t" | "\n").rep
+    NoTrace(wsOpt)
   }
 
   import fastparse.noApi._
   import White._
 
-  val reserved = Set("endfor", "endif", "else", "true", "false")
+  val reserved = Set("endfor", "endif", "endmacro", "else", "true", "false")
 
+  val ws = P(" " | "\t" | "\n").rep(min=1)
   val ccx: P[Unit] = "}" ~~ "\n".?
   val identStart = CharPred(x => x.isLetter || x == '_')
   val identChar = CharsWhile(x => x.isLetterOrDigit || x == '_')
@@ -30,7 +31,7 @@ private object TemplateParser {
   val literal = P(double | integer | string | boolean)
   val variable: P[Value] = P(ident ~ ("." ~ ident).rep).map(x => Variable(x._1 +: x._2))
   val value: P[Value] = P(literal | variable)
-  val function = P((ident ~~ "(" ~ value.rep(sep = ",") ~ ")").map(Function.tupled))
+  val function = P((ident ~~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
 
   val brackets: P[Value] = P("(" ~/ expression ~ ")")
   val valueType: P[Value] = P("!".!.? ~ (function | brackets | value)).map{x=> x._1 match {
@@ -64,11 +65,13 @@ private object TemplateParser {
 
   val expression: P[Value] = P(conditional)
   val evalExpression: P[TemplateExpr] = P("{" ~ expression ~ "}")
-  def cmd(cmdName: String): P[Unit] = "${" ~ cmdName ~ ccx
-  val forLoop = P(("{for " ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
-  val ifThenElse = P(("{if" ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
+  def cmd(cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
+  val forLoop = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
+  val ifThenElse = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
     .map(x => IfThenElse(x._1, x._2, x._3.getOrElse(EmptyLiteral))))
-  val construct: P[TemplateExpr] = P(forLoop | ifThenElse)
+  val macroTemplate = P(("{" ~ "macro" ~~ ws ~ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
+    .map(x=> MacroDef(x._1, x._2, x._3))
+  val construct: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
   val untilDollar = P(CharsWhile(_ != '$').!).map(Literal)
   val dollarExpression: P[TemplateExpr] = P("$" ~~ (dollar | construct | variable | evalExpression))
   val mainText: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence)
@@ -97,6 +100,7 @@ class Template(templateText: String, instrument: Boolean = false) {
         val parseTime = System.currentTimeMillis - start
         if (instrument) {
           println(s"ParseTime: $parseTime")
+          println(s"Total ops: $totalOps")
           println(output)
         }
         Right(output)
@@ -107,8 +111,6 @@ class Template(templateText: String, instrument: Boolean = false) {
       Left(s"Error failed expecting $last at pos $index ${textPos(templateText,index)}: $currentContext...")
     }
   }
-
-  if (instrument) println(s"Total ops: $totalOps")
 
   private def textPos(text: String, index: Int) = {
     val lines = text.take(index).split("\n")
@@ -127,27 +129,42 @@ class Template(templateText: String, instrument: Boolean = false) {
     }
   }
 
-  private def render(template: TemplateExpr, context: Context, sb: StringBuilder): Unit = {
+  private def render(template: TemplateExpr, context: Context, sb: StringBuilder): Context = {
     template match {
+      case MacroDef(name, args, body) =>
+        context.withFunctions(name -> FunctionSpec(args.size, {
+          argValExprs =>
+            val argVals = argValExprs.map(argValExpr => evalValue(argValExpr, context))
+            val newContext = context.withValues(args.zip(argVals): _*)
+            val tsb = new StringBuilder
+            render(body, newContext, tsb)
+            StringValue(tsb.result())
+        }))
+
       case Sequence(items) =>
-        items.foreach(render(_, context, sb))
+        items.foldLeft(context)((ctx, item) => render(item, ctx, sb))
+        context
 
       case Literal(str) =>
         sb ++= str
+        context
 
       case value: Value =>
         sb ++= evalValue(value, context).toStr
+        context
 
       case ForLoop(index, array, expr) =>
         val prim = evalValue(array, context)
         prim.toArray.value.foreach{ item =>
-          render(expr, context.copy(values = MapValue(context.values.value + (index -> item))), sb)
+          render(expr, context.withValues(index -> item), sb)
         }
+        context
 
       case IfThenElse(pred, thenExpr, elseExpr) =>
         val predValue = evalValue(pred, context).toBoolean
         val expr = if (predValue == BooleanValue.trueV) thenExpr else elseExpr
         render(expr, context, sb)
+        context
     }
   }
 

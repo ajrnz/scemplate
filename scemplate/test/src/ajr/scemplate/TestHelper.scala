@@ -39,12 +39,16 @@ trait TestHelper {
 
   val instrument = false
 
+  def quoteWhiteSpace(str: String) = str.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t")
+
   def validate(tmpl: String, expt: String) = {
     val t = new Template(tmpl, instrument = instrument)
     val err = t.error
-    assert(err == None)
+    err ==> None
     val result = t.render(context)
-    assert(result == expt)
+//    println(s"result:  >${quoteWhiteSpace(result)}<")
+//    println(s"expected:>${quoteWhiteSpace(expt)}<")
+    result ==> expt
   }
 
   def invalid(tmpl: String) = {

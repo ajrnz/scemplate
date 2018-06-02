@@ -28,7 +28,7 @@ object TestExample extends TestSuite
 
   case class Account(person: Person, balance: Double, active: Boolean, transactions: Seq[Transaction])
   object Account {
-    implicit def toTV(value: Account) = CaseClassEncoder.gen[Account].encode(value)
+    implicit def toTV(value: Account): TemplateValue = CaseClassEncoder.gen[Account].encode(value)
   }
 
 

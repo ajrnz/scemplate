@@ -10,6 +10,8 @@ case class IfThenElse(pred: Value, thenExpr: TemplateExpr, elseExpr: TemplateExp
 
 sealed trait Value extends TemplateExpr
 
+case class MacroDef(name: String, args: Seq[String], body: TemplateExpr) extends TemplateExpr
+
 sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
   def toStr: String
   def toInt: Int = sys.error(s"$this cannot be converted to an integer")
