@@ -16,7 +16,7 @@ object TestCaseClasses extends TestSuite with TestHelper {
     }
 
     'caseClassConversion - {
-      val ccEnc = context.values.value("user")
+      val ccEnc = testContext.values.value("user")
       val expt = MapValue(Map(
         "person" -> MapValue(Map(
           "name" -> StringValue("Andrew"),

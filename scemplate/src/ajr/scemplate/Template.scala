@@ -70,17 +70,16 @@ private object TemplateParser {
     }
   }
 
-
-  val expression: P[Value] = P(conditional)
+  val expression:     P[Value] = P(conditional)
   val evalExpression: P[TemplateExpr] = P("{" ~ expression ~ "}")
   def cmd(cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
-  val forLoop = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
-  val ifThenElse = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
+  val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
+  val ifThenElse      = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
     .map(x => IfThenElse(x._1, x._2, x._3.getOrElse(EmptyLiteral))))
-  val macroTemplate = P(("{" ~ "macro" ~~ ws ~ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
+  val macroTemplate   = P(("{" ~ "macro" ~~ ws ~ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
     .map(x=> MacroDef(x._1, x._2, x._3))
   val construct: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
-  val untilDollar = P(CharsWhile(_ != '$').!).map(Literal)
+  val untilDollar     = P(CharsWhile(_ != '$').!).map(Literal)
   val dollarExpression: P[TemplateExpr] = P("$" ~~ (dollar | construct | variable | evalExpression))
   val mainText: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence)
 
@@ -88,13 +87,12 @@ private object TemplateParser {
 }
 
 
-
-class Template(templateText: String, instrumentLevel: Int = 0) {
+class Template(templateText: String) {
   import fastparse.core.Parsed
   import fastparse.core.Parser
 
-  private var totalOps = 0
-  def parseOps = totalOps
+  protected val instrumentLevel: Int = 0
+  protected var totalOps = 0
 
   private val instrumentFunction = (parser: Parser[_,Char,String], index: Int, continuation: () => Parsed[_, Char,String]) => {
     totalOps += 1

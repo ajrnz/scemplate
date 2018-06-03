@@ -8,10 +8,8 @@ import ajr.scemplate._
 import ajr.scemplate.implicits._
 import utest.{Show => uShow, _}
 
-object TestExample extends TestSuite
+object TestExample extends TestHelper
 {
-  var opCounter = 0
-
   case class ReportInfo(title: String, page: Int, pages: Int, footer:String)
   case class Person(name: String, age: Int)
 
@@ -100,14 +98,14 @@ object TestExample extends TestSuite
 
   val tests = Tests {
     'example - {
-      val template = new Template(templateText, 1)
+      val template = new TemplateInst(templateText, 1)
       template.error ==> None
       val result = template.render(context)
       result ==> expected
 
-      println(s"Example ops: ${template.parseOps}")
-      assert(template.parseOps < 900)
+      opDiff("Example", template.parseOps, 790)
     }
+
     'performance - {
       if (false) {
         val iterations = 100000

@@ -10,9 +10,13 @@ object Employee {
   implicit def toTV(value: Employee): TemplateValue = CaseClassEncoder.gen[Employee].encode(value)
 }
 
+class TemplateInst(tmpl: String, override val instrumentLevel: Int) extends Template(tmpl) {
+  def parseOps = totalOps
+}
+
 
 trait TestHelper extends TestSuite {
-  val context = Context()
+  val testContext = Context()
     .withValues(
       "OneString" -> "1",
       "OneInt" -> 1,
@@ -43,24 +47,26 @@ trait TestHelper extends TestSuite {
   def quoteWhiteSpace(str: String) = str.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t")
 
   def validate(tmpl: String, expt: String) = {
-    val t = new Template(tmpl, instrumentLevel)
+    val t = new TemplateInst(tmpl, instrumentLevel)
     totalOps += t.parseOps
     val err = t.error
     err ==> None
-    val result = t.render(context)
+    val result = t.render(testContext)
 //    println(s"result:  >${quoteWhiteSpace(result)}<")
 //    println(s"expected:>${quoteWhiteSpace(expt)}<")
     result ==> expt
   }
 
   def invalid(tmpl: String) = {
-    val t = new Template(tmpl, instrumentLevel)
+    val t = new TemplateInst(tmpl, instrumentLevel)
     totalOps += t.parseOps
     assert(t.error.isDefined)
   }
 
-  def opCheck(expected: Int) = {
-    val percDiff = ((totalOps.toDouble - expected)/expected)*100
-    println(f"Total ops: $totalOps (expected $expected) $percDiff%4.1f%%")
+  def opCheck(expected: Int) = opDiff("Total", totalOps, expected)
+
+  def opDiff(name: String, actual: Int, expected: Int) = {
+    val percDiff = ((actual.toDouble - expected)/expected)*100
+    println(f"$name ops: $actual (expected $expected) $percDiff%4.1f%%")
   }
 }
