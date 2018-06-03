@@ -103,7 +103,7 @@ object TestExample extends TestHelper
       val result = template.render(context)
       result ==> expected
 
-      opDiff("Example", template.parseOps, 790)
+      opDiff("Example", template.parseOps, 803)
     }
 
     'performance - {

@@ -34,9 +34,9 @@ private object TemplateParser {
   val boolean       = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
   val literal       = P(double | integer | string | boolean)
-  val variable      = P(ident ~~ ("." ~~ ident).repX).map(x => Variable(x._1 +: x._2))
+  val variable      = P(ident.repX(min=1, sep=".")).map(x => Variable(x))
   val value         = P(literal | variable)
-  val function      = P((ident ~~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
+  val function      = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
 
   val brackets      = P("(" ~/ expression ~ ")")
 
@@ -45,24 +45,24 @@ private object TemplateParser {
     case None    => x._2
   }}
 
-  val multiDivMod: P[Value] = P(valueType ~ (("*" | "/" | "%").! ~ valueType).rep).map{x =>
+  val multiDivMod: P[Value] = P(valueType ~ (("*" | "/" | "%").! ~/ valueType).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) => op match {
       case "*" => Multiply(c, value)
       case "/" => Divide(c, value)
       case "%" => Modulus(c, value)
     }}
   }
-  val addSub: P[Value] = P(multiDivMod ~ (("+"|"-").! ~ multiDivMod).rep).map{x =>
+  val addSub: P[Value] = P(multiDivMod ~ (("+"|"-").! ~/ multiDivMod).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       if (op == "+") Add(c, value) else Subtract(c, value)
     }
   }
-  val andOr: P[Value] = P(addSub ~ (("&&"|"||").! ~ addSub).rep).map{x =>
+  val andOr: P[Value] = P(addSub ~ (("&&"|"||").! ~/ addSub).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       if (op == "&&") And(c, value) else Or(c, value)
     }
   }
-  val conditional: P[Value] = P(andOr ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~ andOr).rep).map{x =>
+  val conditional: P[Value] = P(andOr ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~/ andOr).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       ConditionalExpr(c, op, value)
     }
@@ -74,7 +74,7 @@ private object TemplateParser {
   val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
   val ifThenElse      = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
     .map(x => IfThenElse(x._1, x._2, x._3.getOrElse(EmptyLiteral))))
-  val macroTemplate   = P(("{" ~ "macro" ~~ ws ~ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
+  val macroTemplate   = P(("{" ~ "macro" ~~ ws ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
     .map(x=> MacroDef(x._1, x._2, x._3))
   val construct: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
   val untilDollar     = P(CharsWhile(_ != '$').!).map(Literal)

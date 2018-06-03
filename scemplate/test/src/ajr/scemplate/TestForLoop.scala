@@ -4,7 +4,7 @@ import utest._
 
 object TestForLoop extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(1263)
+    opCheck(1270)
   }
 
   val tests = Tests {
