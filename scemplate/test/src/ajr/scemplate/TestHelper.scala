@@ -16,7 +16,7 @@ class TemplateInst(tmpl: String, override val instrumentLevel: Int) extends Temp
 
 
 trait TestHelper extends TestSuite {
-  val testContext = Context()
+  implicit val testContext = Context()
     .withValues(
       "OneString" -> "1",
       "OneInt" -> 1,
@@ -46,14 +46,18 @@ trait TestHelper extends TestSuite {
 
   def quoteWhiteSpace(str: String) = str.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t")
 
-  def validate(tmpl: String, expt: String) = {
+  def validate(tmpl: String, expt: String)(implicit context: Context) = {
     val t = new TemplateInst(tmpl, instrumentLevel)
     totalOps += t.parseOps
     val err = t.error
     err ==> None
-    val result = t.render(testContext)
-//    println(s"result:  >${quoteWhiteSpace(result)}<")
-//    println(s"expected:>${quoteWhiteSpace(expt)}<")
+    val result = t.render(context)
+    if (result != expt) {
+      println(s"result\n$result")
+      println(s"expected\n$expt")
+      println(s"result:  >${quoteWhiteSpace(result)}<")
+      println(s"expected:>${quoteWhiteSpace(expt)}<")
+    }
     result ==> expt
   }
 

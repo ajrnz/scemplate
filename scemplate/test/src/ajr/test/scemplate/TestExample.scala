@@ -1,8 +1,10 @@
 package ajr.test.scemplate
 
+import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.LocalDate.{parse => parseDate}
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 import ajr.scemplate._
 import ajr.scemplate.implicits._
@@ -51,7 +53,9 @@ object TestExample extends TestHelper
     case _ => throw new BadNameException(s"Cannot take length of $v")
   })
 
-  val context = Context()
+  val currencyFormat = NumberFormat.getCurrencyInstance(Locale.UK)
+
+  implicit val context = Context()
     .withValues(
       "title" -> "Bank Statement",
       "date" -> "17 March 2018",
@@ -60,12 +64,18 @@ object TestExample extends TestHelper
       "accounts" -> accounts.toArrayValue
     )
     .withFunctions(
-      "formatCurrency" -> function(v => java.text.NumberFormat.getInstance().format(v.toDouble)),
-      "length" -> length
+      "formatCurrency" -> function(v => currencyFormat.format(v.toDouble)),
+      "length"         -> length,
+      "rep"            -> function((s,n) => s.toStr * n.toInt),
+      "leftAlign"      -> function((s,f) => s.toStr + (" " * (f.toInt - s.toStr.length).max(0))),
+      "rightAlign"     -> function((s,f) => (" " * (f.toInt - s.toStr.length).max(0)) + s.toStr)
     )
 
   val templateText =
-    """$title as at: $date  /  Branch: $branchId
+    """${macro renderTran(tran,indent)}
+      |${rep(" ", indent)}${tran.date} ${leftAlign(tran.description,8)} ${rightAlign(formatCurrency(tran.value), 10)}
+      |${endmacro}
+      |$title as at: $date  /  Branch: $branchId
       |Accounts
       |${for account in accounts}
       |
@@ -75,7 +85,7 @@ object TestExample extends TestHelper
       |${if length(account.transactions) > 0}
       |Transactions
       |${for tran in account.transactions}
-      |  ${tran.date} ${tran.description} ${formatCurrency(tran.value)}
+      |${renderTran(tran,2)}
       |${endfor}
       |${endif}
       |${endfor}
@@ -86,24 +96,20 @@ object TestExample extends TestHelper
       |Accounts
       |
       |Name:    Jack (Active)
-      |Balance: 1,234.23
+      |Balance: £1,234.23
       |Transactions
-      |  2018-05-22 Food -110.22
-      |  2018-06-01 Rent 1,400
-      |  2018-07-19 Salary 3,200
+      |  2018-05-22 Food       -£110.22
+      |  2018-06-01 Rent      £1,400.00
+      |  2018-07-19 Salary    £3,200.00
       |
       |Name:    Jill (Inactive)
-      |Balance: 0
+      |Balance: £0.00
       |""".stripMargin
 
   val tests = Tests {
     'example - {
-      val template = new TemplateInst(templateText, 1)
-      template.error ==> None
-      val result = template.render(context)
-      result ==> expected
-
-      opDiff("Example", template.parseOps, 803)
+      validate(templateText, expected)
+      opDiff("Example", totalOps, 1111)
     }
 
     'performance - {

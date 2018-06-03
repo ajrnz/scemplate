@@ -34,7 +34,7 @@ object TemplateTest extends TestSuite with TestHelper {
     }
 
     'misc - {
-      'whitespace - validate("${ ( 1 + 2 ) * 3 - 4 }", "5")
+      'whitespace1 - validate("${ ( 1 + 2 ) * 3 - 4 }", "5")
       'whitespace2 - validate("${(1+2)*3-4 == 0}", "false")
       'quotes - validate("""${"test" + "fire"}""", "testfire")
       'quoteQuote - validate("""${"Quote \" here"}""", """Quote " here""")
@@ -64,8 +64,8 @@ object TemplateTest extends TestSuite with TestHelper {
         'modulus - validate("${10%3}", "1")
         'precedence - validate("${1+2*3-4}", "3")
         'brackets - validate("${(1+2)*3-4}", "5")
-        'mixedTypes - validate("${10*0.5}", "5.0")
-        'mixedTypes - validate("${0.5*10}", "5.0")
+        'mixedTypes1 - validate("${10*0.5}", "5.0")
+        'mixedTypes2 - validate("${0.5*10}", "5.0")
       }
       'double - {
         // no ideal comparing doubles like this, I know
@@ -74,8 +74,8 @@ object TemplateTest extends TestSuite with TestHelper {
         'multiplication - validate("${5.5*2.0}", "11.0")
         'division - validate("${10.0/4.0}", "2.5")
         'modulus - validate("${10.0%3.0}", "1.0")
-        'mixedTypes - validate("${10*0.5}", "5.0")
-        'mixedTypes - validate("${0.5*10}", "5.0")
+        'mixedTypes1 - validate("${10*0.5}", "5.0")
+        'mixedTypes2 - validate("${0.5*10}", "5.0")
       }
     }
 
@@ -84,17 +84,17 @@ object TemplateTest extends TestSuite with TestHelper {
       'equalNot - validate("${1 == 2}", "false")
       'lessThan - validate("${1 < 2}", "true")
       'lessThan2 - validate("${1 < 1}", "false")
-      'and - validate("${true && true}", "true")
+      'and1 - validate("${true && true}", "true")
       'and2 - validate("${true && false}", "false")
-      'or - validate("${true || true}", "true")
+      'or1 - validate("${true || true}", "true")
       'or2 - validate("${true || false}", "true")
       'or3 - validate("${false || false}", "false")
-      'lessThanEqual - validate("${1 <= 1}", "true")
+      'lessThanEqual1 - validate("${1 <= 1}", "true")
       'lessThanEqual2 - validate("${1 <= 2}", "true")
       'lessThanEqual3 - validate("${2 <= 1}", "false")
-      'greaterThan - validate("${-1 > -2}", "true")
-      'greaterThan - validate("${-2 > 2}", "false")
-      'greaterThanEqual - validate("${1 >= 1}", "true")
+      'greaterThan1 - validate("${-1 > -2}", "true")
+      'greaterThan2 - validate("${-2 > 2}", "false")
+      'greaterThanEqual1 - validate("${1 >= 1}", "true")
       'greaterThanEqual2 - validate("${2 >= 1}", "true")
       'greaterThanEqual3 - validate("${1 >= 2}", "false")
       'diffTypes - intercept[BadTypeException] { validate("${2 == false}", "true") }
