@@ -14,7 +14,20 @@ case class IfThenElse(pred: Value, thenExpr: TemplateExpr, elseExpr: TemplateExp
 
 sealed trait Value extends TemplateExpr
 
-case class MacroDef(name: String, args: Seq[String], body: TemplateExpr) extends TemplateExpr
+case class MacroDef private (name: String, args: Seq[String], body: TemplateExpr) extends TemplateExpr
+
+object MacroDef {
+  def apply(name: String, args: Seq[String], body: Sequence) = {
+    val newBody =
+      body.items.lastOption match {
+        case Some(Literal(str)) if str.endsWith("\n") =>
+          Sequence(body.items.updated(body.items.size -1, Literal(str.substring(0, str.length-1))))
+        case _ =>
+          body
+      }
+    new MacroDef(name, args, newBody)
+  }
+}
 
 sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
   def toStr: String
