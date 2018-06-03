@@ -90,7 +90,7 @@ object BooleanValue {
   def apply(value: Boolean): BooleanValue = if (value) trueV else falseV
 }
 
-case class ArrayValue(value: IndexedSeq[TemplateValue]) extends TemplateValue {
+case class ArrayValue(value: Seq[TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare array values")
   override def toStr = "[" + value.map(_.toStr).mkString(",") + "]"
   override def toArray = this
