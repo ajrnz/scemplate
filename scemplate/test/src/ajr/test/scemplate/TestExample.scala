@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import ajr.scemplate._
 import ajr.scemplate.implicits._
-import utest.{Show => uShow, _}
+import utest._
 
 object TestExample extends TestHelper
 {
@@ -48,7 +48,7 @@ object TestExample extends TestHelper
     case v: StringValue => v.value.length
     case v: ArrayValue => v.value.size
     case v: MapValue => v.value.size
-    case _ => throw new Exception(s"Cannot take length of $v")
+    case _ => throw new BadNameException(s"Cannot take length of $v")
   })
 
   val context = Context()

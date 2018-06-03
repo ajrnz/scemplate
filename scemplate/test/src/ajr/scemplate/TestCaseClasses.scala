@@ -12,7 +12,7 @@ object TestCaseClasses extends TestSuite with TestHelper {
       'fieldInt - validate("${user.salary}", "80000")
       'subFieldString - validate("${user.person.name}", "Andrew")
       'subFieldInt - validate("${user.person.age}", "21")
-      'invalidField - intercept[NoSuchElementException] { validate("${user.invalid}", "") }
+      'invalidField - intercept[BadNameException] { validate("${user.invalid}", "") }
     }
 
     'caseClassConversion - {

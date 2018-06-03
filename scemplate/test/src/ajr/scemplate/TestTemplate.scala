@@ -52,7 +52,7 @@ object TemplateTest extends TestSuite with TestHelper {
     'functions - {
       'oneParam - validate("${lowerCase(this)}", "this")
       'twoParam - validate("""${repeat("abc", 3)}""", "abcabcabc")
-      'toFewParams - intercept[Exception] { validate("${lowerCase()}", "this") }
+      'toFewParams - intercept[BadTypeException] { validate("${lowerCase()}", "this") }
     }
 
     'expressions - {
@@ -97,11 +97,11 @@ object TemplateTest extends TestSuite with TestHelper {
       'greaterThanEqual - validate("${1 >= 1}", "true")
       'greaterThanEqual2 - validate("${2 >= 1}", "true")
       'greaterThanEqual3 - validate("${1 >= 2}", "false")
-      'diffTypes - intercept[Exception] { validate("${2 == false}", "true") }
+      'diffTypes - intercept[BadTypeException] { validate("${2 == false}", "true") }
       'precedence - validate("${(1+2)*3-4 == 4-1*4+(4/2)}", "false")
       'multiPrecedence - validate("${1 == 2 == false}", "true")
       'multiBrackets - validate("${false == (1 == 2)}", "true")
-      'multiInvalid - intercept[Exception] { validate("${false == 1 == 2}", "ex") }
+      'multiInvalid - intercept[BadTypeException] { validate("${false == 1 == 2}", "ex") }
     }
   }
 }

@@ -1,7 +1,5 @@
 package ajr.scemplate
 
-import java.util.NoSuchElementException
-
 
 private object TemplateParser {
   val White = fastparse.WhitespaceApi.Wrapper{
@@ -134,7 +132,7 @@ class Template(templateText: String) {
         sb.result()
 
       case Left(err) =>
-        throw new IllegalArgumentException(s"Cannot render invalid template: $err")
+        throw new TemplateException(s"Cannot render invalid template: $err")
     }
   }
 
@@ -187,30 +185,25 @@ class Template(templateText: String) {
       case x: MapValue => x
 
       case Variable(path) =>
-        try {
-          path.foldLeft[TemplateValue](context.values){ (ctx, key) =>
-            ctx.toMap(key)
-          }
+        path.foldLeft[Option[TemplateValue]](Some(context.values)){ (ctx, key) =>
+          ctx.flatMap(_.toMap.value.get(key))
         }
-        catch {
-          case _: NoSuchElementException =>
-            throw new NoSuchElementException(s"Key not found ${path.mkString(".")}")
-        }
+        .getOrElse(throw new BadNameException(s"Key not found ${path.mkString(".")}"))
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
         val functionSpec = context.functions.get(name) match {
           case Some(func) => func
-          case None => throw new Exception(s"Unknown function: $name")
+          case None => throw new BadNameException(s"Unknown function: $name")
         }
         if (paramValues.size != functionSpec.numParams)
-          throw new Exception(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
+          throw new BadTypeException(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
         functionSpec.function(paramValues)
 
       case cond: ConditionalExpr =>
         val a = evalValue(cond.a, context)
         val b = evalValue(cond.b, context)
-        if (a.getClass != b.getClass) throw new Exception(s"Cannot compare $a and $b of different types")
+        if (a.getClass != b.getClass) throw new BadTypeException(s"Cannot compare $a and $b of different types")
         val res = BooleanValue(cond match {
           case _: Equals =>           a == b
           case _: NotEqual =>         a != b
@@ -244,7 +237,7 @@ class Template(templateText: String) {
             DoubleValue(a.toDouble + b.toDouble)
 
           case _ =>
-            throw new Exception(s"Cannot add $a to $b")
+            throw new BadNameException(s"Cannot add $a to $b")
         }
 
       case op: Subtract =>
