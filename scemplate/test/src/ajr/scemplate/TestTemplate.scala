@@ -25,6 +25,8 @@ object TemplateTest extends TestSuite with TestHelper {
       'literalBooleanTrue - validate("${true}", "true")
       'literalBooleanFalse - validate("${false}", "false")
       'variableString - validate("$OneString", "1")
+      'variableStringSimple - validate("$OneString.Another", "1.Another")
+      'variableStringMissing - intercept[BadNameException] { validate("$Another.Thing", "") }
       'variableInt - validate("$OneInt", "1")
       'variableBooleanTrue - validate("$trueValue", "true")
       'variableBooleanTrue2 - validate("${trueValue}", "true")

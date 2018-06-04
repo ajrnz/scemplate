@@ -34,8 +34,9 @@ private object TemplateParser {
   val boolean       = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
 
   val literal       = P(double | integer | string | boolean)
-  val variable      = P(ident.repX(min=1, sep=".")).map(x => Variable(x))
-  val value         = P(literal | variable)
+  val variable      = P(ident).map(x => Variable(Seq(x)))
+  val variablePath  = P(ident.repX(min=1, sep=".")).map(x => Variable(x))
+  val value         = P(literal | variablePath)
   val function      = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
 
   val brackets      = P("(" ~/ expression ~ ")")
