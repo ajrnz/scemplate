@@ -158,18 +158,18 @@ class Template(templateText: String) {
         context
 
       case value: Value =>
-        sb ++= evalValue(value, context).toStr
+        sb ++= evalValue(value, context).asString
         context
 
       case ForLoop(index, array, expr) =>
         val prim = evalValue(array, context)
-        prim.toArray.value.foreach{ item =>
+        prim.asArray.value.foreach{ item =>
           render(expr, context.withValues(index -> item), sb)
         }
         context
 
       case IfThenElse(pred, thenExpr, elseExpr) =>
-        val predValue = evalValue(pred, context).toBoolean
+        val predValue = evalValue(pred, context).asBoolean
         val expr = if (predValue == BooleanValue.trueV) thenExpr else elseExpr
         render(expr, context, sb)
         context
@@ -221,13 +221,13 @@ class Template(templateText: String) {
           case _: GreaterThan =>      a >  b
           case _: LessThanEqual =>    a <= b
           case _: LessThan =>         a <  b
-          case _: And =>              a.toBoolean.value && b.toBoolean.value
-          case _: Or =>               a.toBoolean.value || b.toBoolean.value
+          case _: And =>              a.asBoolean.value && b.asBoolean.value
+          case _: Or =>               a.asBoolean.value || b.asBoolean.value
         })
         res
 
       case Negate(value) =>
-        val v = evalValue(value, context).toBoolean
+        val v = evalValue(value, context).asBoolean
         BooleanValue(!v.value)
 
       case op: Add =>
@@ -235,16 +235,16 @@ class Template(templateText: String) {
         val b = evalValue(op.b, context)
         (a,b) match {
           case (_: IntValue, _: IntValue) =>
-            IntValue(a.toInt + b.toInt)
+            IntValue(a.asInt + b.asInt)
 
           case (_: StringValue, _: StringValue) =>
-            StringValue(a.toStr + b.toStr)
+            StringValue(a.asString + b.asString)
 
           case (_: IntValue, _: IntValue) |
                (_: IntValue, _: DoubleValue) |
                (_: DoubleValue, _: IntValue) |
                (_: DoubleValue, _: DoubleValue) =>
-            DoubleValue(a.toDouble + b.toDouble)
+            DoubleValue(a.asDouble + b.asDouble)
 
           case _ =>
             throw new BadNameException(s"Cannot add $a to $b")
@@ -255,9 +255,9 @@ class Template(templateText: String) {
         val b = evalValue(op.b, context)
         (a,b)  match {
           case (_: IntValue, _: IntValue) =>
-            IntValue(a.toInt - b.toInt)
+            IntValue(a.asInt - b.asInt)
           case _ =>
-            DoubleValue(a.toDouble - b.toDouble)
+            DoubleValue(a.asDouble - b.asDouble)
         }
 
       case op: Multiply =>
@@ -265,9 +265,9 @@ class Template(templateText: String) {
         val b = evalValue(op.b, context)
         (a,b)  match {
           case (_: IntValue, _: IntValue) =>
-            IntValue(a.toInt * b.toInt)
+            IntValue(a.asInt * b.asInt)
           case _ =>
-            DoubleValue(a.toDouble * b.toDouble)
+            DoubleValue(a.asDouble * b.asDouble)
         }
 
       case op: Divide =>
@@ -275,9 +275,9 @@ class Template(templateText: String) {
         val b = evalValue(op.b, context)
         (a,b)  match {
           case (_: IntValue, _: IntValue) =>
-            IntValue(a.toInt / b.toInt)
+            IntValue(a.asInt / b.asInt)
           case _ =>
-            DoubleValue(a.toDouble / b.toDouble)
+            DoubleValue(a.asDouble / b.asDouble)
         }
 
       case op: Modulus =>
@@ -285,9 +285,9 @@ class Template(templateText: String) {
         val b = evalValue(op.b, context)
         (a,b)  match {
           case (_: IntValue, _: IntValue) =>
-            IntValue(a.toInt % b.toInt)
+            IntValue(a.asInt % b.asInt)
           case _ =>
-            DoubleValue(a.toDouble % b.toDouble)
+            DoubleValue(a.asDouble % b.asDouble)
         }
     }
   }

@@ -34,11 +34,11 @@ trait TestHelper extends TestSuite {
       "user" -> Employee(Person("Andrew", 21, Seq("superstar", "humble")), 80000, true)
     )
     .withFunctions(
-      "lowerCase" ->      function(_.toStr.toLowerCase),
-      "upperCase" ->      function(_.toStr.toLowerCase),
-      "currencyCommas" -> function(_.toStr.reverse.grouped(3).mkString(",").reverse),
-      "range" ->          function((s,e) => Range(s.toInt, e.toInt).toSeq),
-      "repeat" ->         function((a,b) => a.toStr * b.toInt)
+      "lowerCase" ->      function(_.asString.toLowerCase),
+      "upperCase" ->      function(_.asString.toLowerCase),
+      "currencyCommas" -> function(_.asString.reverse.grouped(3).mkString(",").reverse),
+      "range" ->          function((s,e) => Range(s.asInt, e.asInt).toSeq),
+      "repeat" ->         function((a,b) => a.asString * b.asInt)
     )
 
   var totalOps = 0

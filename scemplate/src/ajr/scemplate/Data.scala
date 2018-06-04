@@ -30,12 +30,12 @@ object MacroDef {
 }
 
 sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
-  def toStr: String
-  def toInt: Int = badType(s"$this cannot be converted to an integer")
-  def toDouble: Double = badType(s"$this cannot be converted to a double")
-  def toBoolean: BooleanValue = badType(s"$this cannot be converted to a boolean")
-  def toArray: ArrayValue = badType(s"$this cannot be converted to an array")
-  def toMap: MapValue = badType(s"$this cannot be converted to a map")
+  def asString: String
+  def asInt: Int = badType(s"$this cannot be converted to an integer")
+  def asDouble: Double = badType(s"$this cannot be converted to a double")
+  def asBoolean: BooleanValue = badType(s"$this cannot be converted to a boolean")
+  def asArray: ArrayValue = badType(s"$this cannot be converted to an array")
+  def asMap: MapValue = badType(s"$this cannot be converted to a map")
 
   def badType(message: String)= throw new BadTypeException(message)
 }
@@ -45,9 +45,9 @@ case class StringValue(value: String) extends TemplateValue {
     case StringValue(thatString) => value.compare(thatString)
     case _ => badType(s"Can't compare string $this with $that")
   }
-  override def toStr = value
-  override def toInt = value.toInt
-  override def toDouble = value.toDouble
+  override def asString = value
+  override def asInt = value.toInt
+  override def asDouble = value.toDouble
 }
 
 case class IntValue(value: Int) extends TemplateValue {
@@ -56,10 +56,10 @@ case class IntValue(value: Int) extends TemplateValue {
       value.compare(thatValue)
     case _ => badType(s"int: Can't compare int $this with $that")
   }
-  override def toStr = value.toString
-  override def toInt = value
-  override def toDouble = value.toDouble
-  override def toBoolean: BooleanValue = BooleanValue(value != 0)
+  override def asString = value.toString
+  override def asInt = value
+  override def asDouble = value.toDouble
+  override def asBoolean: BooleanValue = BooleanValue(value != 0)
 }
 
 case class DoubleValue(value: Double) extends TemplateValue {
@@ -68,10 +68,10 @@ case class DoubleValue(value: Double) extends TemplateValue {
       value.compare(thatValue)
     case _ => badType(s"int: Can't compare int $this with $that")
   }
-  override def toStr = value.toString
-  override def toInt = value.toInt
-  override def toDouble = value
-  override def toBoolean: BooleanValue = BooleanValue(value != 0.0)
+  override def asString = value.toString
+  override def asInt = value.toInt
+  override def asDouble = value
+  override def asBoolean: BooleanValue = BooleanValue(value != 0.0)
 }
 
 case class BooleanValue(value: Boolean) extends TemplateValue {
@@ -80,8 +80,8 @@ case class BooleanValue(value: Boolean) extends TemplateValue {
       value.compare(thatValue)
     case _ => badType(s"Can't compare boolean $this with $that")
   }
-  override def toStr = value.toString
-  override def toBoolean: BooleanValue = this
+  override def asString = value.toString
+  override def asBoolean: BooleanValue = this
 }
 
 object BooleanValue {
@@ -92,14 +92,14 @@ object BooleanValue {
 
 case class ArrayValue(value: Seq[TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare array values")
-  override def toStr = "[" + value.map(_.toStr).mkString(",") + "]"
-  override def toArray = this
+  override def asString = "[" + value.map(_.asString).mkString(",") + "]"
+  override def asArray = this
 }
 
 case class MapValue(value: Map[String,TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare map values")
-  override def toStr = "{" + value.map{case(k,v) => s"$k=${v.toStr}"}.mkString(",") +"}"
-  override def toMap = this
+  override def asString = "{" + value.map{case(k,v) => s"$k=${v.asString}"}.mkString(",") +"}"
+  override def asMap = this
   def apply(key: String) = value(key)
 }
 

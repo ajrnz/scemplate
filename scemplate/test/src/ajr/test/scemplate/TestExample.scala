@@ -64,11 +64,11 @@ object TestExample extends TestHelper
       "accounts" -> accounts.toArrayValue
     )
     .withFunctions(
-      "formatCurrency" -> function(v => currencyFormat.format(v.toDouble)),
+      "formatCurrency" -> function(v => currencyFormat.format(v.asDouble)),
       "length"         -> length,
-      "rep"            -> function((s,n) => s.toStr * n.toInt),
-      "leftAlign"      -> function((s,f) => s.toStr + (" " * (f.toInt - s.toStr.length).max(0))),
-      "rightAlign"     -> function((s,f) => (" " * (f.toInt - s.toStr.length).max(0)) + s.toStr)
+      "rep"            -> function((s,n) => s.asString * n.asInt),
+      "leftAlign"      -> function((s,f) => s.asString + (" " * (f.asInt - s.asString.length).max(0))),
+      "rightAlign"     -> function((s,f) => (" " * (f.asInt - s.asString.length).max(0)) + s.asString)
     )
 
   val templateText =
