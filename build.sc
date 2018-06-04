@@ -5,7 +5,7 @@ import ammonite.ops._
 
 trait ScemplatePlublishModule extends PublishModule {
   def artifactName = "scemplate"
-  def publishVersion = "0.0.2-SNAPSHOT"
+  def publishVersion = "0.0.3-SNAPSHOT"
 
   def pomSettings = PomSettings(
     description = artifactName(),

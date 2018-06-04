@@ -185,10 +185,19 @@ class Template(templateText: String) {
       case x: MapValue => x
 
       case Variable(path) =>
-        path.foldLeft[Option[TemplateValue]](Some(context.values)){ (ctx, key) =>
-          ctx.flatMap(_.toMap.value.get(key))
+        path.foldLeft[Either[String,TemplateValue]](Right(context.values)){ (ctx, key) => ctx match {
+          case l @ Left(_) => l
+
+          case Right(MapValue(m)) =>
+            m.get(key).toRight(s"$key is not an object")
+
+          case Right(x) =>
+            Left(s"$key not found")
+        }} match {
+          case Right(x) => x
+          case Left(msg) =>
+            throw new BadNameException(s"$msg in ${path.mkString(".")}")
         }
-        .getOrElse(throw new BadNameException(s"Key not found ${path.mkString(".")}"))
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))

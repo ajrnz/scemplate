@@ -98,7 +98,7 @@ case class ArrayValue(value: Seq[TemplateValue]) extends TemplateValue {
 
 case class MapValue(value: Map[String,TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare map values")
-  override def toStr = "{" + value.map{case(k,v) => s"k=${v.toStr}"}.mkString(",") +"}"
+  override def toStr = "{" + value.map{case(k,v) => s"$k=${v.toStr}"}.mkString(",") +"}"
   override def toMap = this
   def apply(key: String) = value(key)
 }
