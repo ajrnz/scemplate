@@ -14,7 +14,8 @@ private object TemplateParser {
   val reserved = Set("endfor", "endif", "endmacro", "else", "true", "false")
 
   val ws            = P(CharIn(" \t\r\n"))
-  val ccx           = "}" ~~ "\n".?
+  val newline       = "\r\n" | "\n"
+  val ccx           = "}" ~~ newline.?
   val identStart    = CharPred(x => x.isLetter || x == '_')
   val identChar     = CharsWhile(x => x.isLetterOrDigit || x == '_')
   val ident         = P((identStart ~~ identChar.?).!).filter(!reserved(_)).opaque("identifier")
@@ -72,10 +73,10 @@ private object TemplateParser {
   val expression:     P[Value] = P(conditional)
   val evalExpression: P[TemplateExpr] = P("{" ~ expression ~ "}")
   def cmd(cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
-  val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
-  val ifThenElse      = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~/ mainText ~ (cmd("else") ~/ mainText).? ~ cmd("endif"))
+  val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
+  val ifThenElse      = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~~ mainText ~~ (cmd("else") ~/ mainText).? ~~ cmd("endif"))
     .map(x => IfThenElse(x._1, x._2, x._3.getOrElse(EmptyLiteral))))
-  val macroTemplate   = P(("{" ~ "macro" ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~/ mainText ~ cmd("endmacro")))
+  val macroTemplate   = P(("{" ~ "macro" ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~~ mainText ~~ cmd("endmacro")))
     .map(x=> MacroDef(x._1, x._2, x._3))
   val construct: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
   val untilDollar     = P(CharsWhile(_ != '$').!).map(Literal)

@@ -2,9 +2,9 @@ package ajr.scemplate
 
 import utest._
 
-object TestForLoop extends TestSuite with TestHelper {
+object TestConstructs extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(1270)
+    opCheck(1328)
   }
 
   val tests = Tests {
@@ -90,18 +90,21 @@ object TestForLoop extends TestSuite with TestHelper {
         'ifExpression - validate("${if age >= 18}adult${else}minor${endif}", "adult")
         'ifLineEnding - {
           val tmpl =
-            """
-              |${if true}
-              |A line
-              |${endif}
-              |Another
+            """|${if true}
+               |  A line
+               |${endif}
+               |Another
             """.stripMargin
           val expt =
-            """
-              |A line
-              |Another
+            """|  A line
+               |Another
             """.stripMargin
-          validate(tmpl, expt)
+          'unix - {
+            validate(tmpl, expt)
+          }
+          'windows - {
+            validate(tmpl.replace("\n", "\r\n"), expt.replace("\n", "\r\n"))
+          }
         }
       }
     }

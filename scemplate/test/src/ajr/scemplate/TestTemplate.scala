@@ -5,7 +5,7 @@ import utest._
 object TemplateTest extends TestSuite with TestHelper {
 
   override def utestAfterAll() = {
-    opCheck(3892)
+    opCheck(3924)
   }
 
 
