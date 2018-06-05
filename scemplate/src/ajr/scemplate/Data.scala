@@ -148,6 +148,9 @@ case class Context(values: MapValue = MapValue.empty, functions: Map[String, Fun
   def withValues(items: (String, TemplateValue)*): Context = {
     copy(values = MapValue(values.value ++ items))
   }
+  def withValues[T](dict: Map[String, T])(implicit toValue: T => TemplateValue): Context = {
+    copy(values = MapValue(values.value ++ dict.map{case(k,v) => k -> toValue(v)}))
+  }
   def withFunctions(items: (String, FunctionSpec)*): Context = {
     copy(functions = functions ++ items)
   }

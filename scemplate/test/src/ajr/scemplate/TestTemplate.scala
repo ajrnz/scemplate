@@ -1,6 +1,7 @@
 package ajr.scemplate
 
 import utest._
+import ajr.scemplate.implicits._
 
 object TemplateTest extends TestSuite with TestHelper {
 
@@ -10,6 +11,8 @@ object TemplateTest extends TestSuite with TestHelper {
 
 
   val tests = Tests{
+    'notDefined1 - intercept[BadNameException] { validate("$foo", "") }
+    'notDefined2 - intercept[BadNameException] { validate("${foo.bar}", "") }
     'basics - {
       'string - validate("test", "test")
       'dollar - validate("$$", "$")
@@ -104,6 +107,15 @@ object TemplateTest extends TestSuite with TestHelper {
       'multiPrecedence - validate("${1 == 2 == false}", "true")
       'multiBrackets - validate("${false == (1 == 2)}", "true")
       'multiInvalid - intercept[BadTypeException] { validate("${false == 1 == 2}", "ex") }
+    }
+
+    'context - {
+      'mapConversion - {
+        val strs = Map("one" -> "1", "two" -> "2")
+        val ints = Map("three" -> 3, "four" -> 4)
+        val ctx = Context().withValues(strs).withValues(ints)
+        validate("$one $two ${three * four}", "1 2 12")(ctx)
+      }
     }
   }
 }

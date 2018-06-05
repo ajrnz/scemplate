@@ -191,14 +191,14 @@ class Template(templateText: String) {
           case l @ Left(_) => l
 
           case Right(MapValue(m)) =>
-            m.get(key).toRight(s"$key is not an object")
+            m.get(key).toRight(s"$key not found")
 
           case Right(x) =>
             Left(s"$key not found")
         }} match {
           case Right(x) => x
           case Left(msg) =>
-            throw new BadNameException(s"$msg in ${path.mkString(".")}")
+            throw new BadNameException(msg + (if (path.size>1) s" in ${path.mkString(".")}" else ""))
         }
 
       case Function(name, params) =>

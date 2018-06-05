@@ -5,10 +5,10 @@ import ammonite.ops._
 
 trait ScemplatePlublishModule extends PublishModule {
   def artifactName = "scemplate"
-  def publishVersion = "0.0.3-SNAPSHOT"
+  def publishVersion = "0.0.4-SNAPSHOT"
 
   def pomSettings = PomSettings(
-    description = artifactName(),
+    description = artifactName() + " - scala template engine",
     organization = "com.github.ajrnz",
     url = "https://github.com/ajrnz/scemplate",
     licenses = Seq(License.MIT),
