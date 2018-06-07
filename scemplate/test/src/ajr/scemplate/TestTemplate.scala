@@ -118,5 +118,10 @@ object TemplateTest extends TestSuite with TestHelper {
         validate("$one $two ${three * four}", "1 2 12")(ctx)
       }
     }
+
+    'errorMessages - {
+      'ifStart - parseError("${if true}blah", "Error failed expecting endif")
+      //'unclosedString - parseError("""${OneString == "bad}""", """Error failed expecting "\"""")
+    }
   }
 }

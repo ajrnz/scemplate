@@ -61,6 +61,13 @@ trait TestHelper extends TestSuite {
     result ==> expt
   }
 
+  def parseError(tmpl: String, expt: String)(implicit context: Context) = {
+    val t = new TemplateInst(tmpl, instrumentLevel)
+    totalOps += t.parseOps
+    val err = t.error
+    assert(err.nonEmpty && err.get.startsWith(expt))
+  }
+
   def invalid(tmpl: String) = {
     val t = new TemplateInst(tmpl, instrumentLevel)
     totalOps += t.parseOps

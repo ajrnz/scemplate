@@ -27,7 +27,7 @@ private object TemplateParser {
   val charEscape    = P(CharIn("tbnrf'\"\\").!.map(c => "\t\b\n\r\f\'\"\\"("tbnrf'\"\\".indexOf(c(0))).toString))
   val escape        = P( "\\" ~~ (charEscape | unicodeEscape) )
   val strChars      = P(CharsWhile(c => c != '"' && c != '\\').!)
-  val string        = P("\"" ~~ (strChars | escape).repX ~~ "\"").map(x => StringValue(x.mkString))
+  val string        = P("\"" ~~ (strChars | escape).repX ~~ "\"").map(x => StringValue(x.mkString)) // XXX first ~~ should be ~~/
 
   val digit         = P(CharPred(_.isDigit))
   val integer       = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
