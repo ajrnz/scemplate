@@ -33,9 +33,9 @@ sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
   def asString: String
   def asInt: Int = badType(s"$this cannot be converted to an integer")
   def asDouble: Double = badType(s"$this cannot be converted to a double")
-  def asBoolean: BooleanValue = badType(s"$this cannot be converted to a boolean")
   def asArray: ArrayValue = badType(s"$this cannot be converted to an array")
   def asMap: MapValue = badType(s"$this cannot be converted to a map")
+  def asBoolean: Boolean = badType(s"$this cannot be converted to a boolean")
 
   def badType(message: String)= throw new BadTypeException(message)
 }
@@ -59,7 +59,7 @@ case class IntValue(value: Int) extends TemplateValue {
   override def asString = value.toString
   override def asInt = value
   override def asDouble = value.toDouble
-  override def asBoolean: BooleanValue = BooleanValue(value != 0)
+  override def asBoolean = value != 0
 }
 
 case class DoubleValue(value: Double) extends TemplateValue {
@@ -71,7 +71,7 @@ case class DoubleValue(value: Double) extends TemplateValue {
   override def asString = value.toString
   override def asInt = value.toInt
   override def asDouble = value
-  override def asBoolean: BooleanValue = BooleanValue(value != 0.0)
+  override def asBoolean = value != 0.0
 }
 
 case class BooleanValue(value: Boolean) extends TemplateValue {
@@ -81,7 +81,7 @@ case class BooleanValue(value: Boolean) extends TemplateValue {
     case _ => badType(s"Can't compare boolean $this with $that")
   }
   override def asString = value.toString
-  override def asBoolean: BooleanValue = this
+  override def asBoolean = value
 }
 
 object BooleanValue {

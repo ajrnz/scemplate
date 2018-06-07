@@ -171,7 +171,7 @@ class Template(templateText: String) {
 
       case IfThenElse(pred, thenExpr, elseExpr) =>
         val predValue = evalValue(pred, context).asBoolean
-        val expr = if (predValue == BooleanValue.trueV) thenExpr else elseExpr
+        val expr = if (predValue) thenExpr else elseExpr
         render(expr, context, sb)
         context
     }
@@ -222,14 +222,13 @@ class Template(templateText: String) {
           case _: GreaterThan =>      a >  b
           case _: LessThanEqual =>    a <= b
           case _: LessThan =>         a <  b
-          case _: And =>              a.asBoolean.value && b.asBoolean.value
-          case _: Or =>               a.asBoolean.value || b.asBoolean.value
+          case _: And =>              a.asBoolean && b.asBoolean
+          case _: Or =>               a.asBoolean || b.asBoolean
         })
         res
 
       case Negate(value) =>
-        val v = evalValue(value, context).asBoolean
-        BooleanValue(!v.value)
+        BooleanValue(!evalValue(value, context).asBoolean)
 
       case op: Add =>
         val a = evalValue(op.a, context)
