@@ -33,9 +33,9 @@ sealed trait TemplateValue extends Value with Ordered[TemplateValue] {
   def asString: String
   def asInt: Int = badType(s"$this cannot be converted to an integer")
   def asDouble: Double = badType(s"$this cannot be converted to a double")
-  def asArray: ArrayValue = badType(s"$this cannot be converted to an array")
-  def asMap: MapValue = badType(s"$this cannot be converted to a map")
   def asBoolean: Boolean = badType(s"$this cannot be converted to a boolean")
+  def asSeq: Seq[TemplateValue] = badType(s"$this cannot be converted to an array")
+  def asMap: Map[String,TemplateValue] = badType(s"$this cannot be converted to a map")
 
   def badType(message: String)= throw new BadTypeException(message)
 }
@@ -93,13 +93,13 @@ object BooleanValue {
 case class ArrayValue(value: Seq[TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare array values")
   override def asString = "[" + value.map(_.asString).mkString(",") + "]"
-  override def asArray = this
+  override def asSeq = value
 }
 
 case class MapValue(value: Map[String,TemplateValue]) extends TemplateValue {
   def compare(that: TemplateValue): Int = badType(s"Can't compare map values")
   override def asString = "{" + value.map{case(k,v) => s"$k=${v.asString}"}.mkString(",") +"}"
-  override def asMap = this
+  override def asMap = value
   def apply(key: String) = value(key)
 }
 

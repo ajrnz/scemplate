@@ -164,7 +164,7 @@ class Template(templateText: String) {
 
       case ForLoop(index, array, expr) =>
         val prim = evalValue(array, context)
-        prim.asArray.value.foreach{ item =>
+        prim.asSeq.foreach{ item =>
           render(expr, context.withValues(index -> item), sb)
         }
         context
