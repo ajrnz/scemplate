@@ -14,6 +14,10 @@ class TemplateInst(tmpl: String, override val instrumentLevel: Int) extends Temp
   def parseOps = totalOps
 }
 
+class TemplateExpressionInst(tmpl: String, override val instrumentLevel: Int) extends TemplateExpression(tmpl) {
+  def parseOps = totalOps
+}
+
 
 trait TestHelper extends TestSuite {
   implicit val testContext = Context()
@@ -61,8 +65,39 @@ trait TestHelper extends TestSuite {
     result ==> expt
   }
 
+  def validateExpression(tmpl: String, expt: String)(implicit context: Context) = {
+    evalExpression(tmpl, context).asString ==> expt
+  }
+
+  def validateExpression(tmpl: String, expt: Int)(implicit context: Context) = {
+    evalExpression(tmpl, context).asInt ==> expt
+  }
+
+  def validateExpression(tmpl: String, expt: Boolean)(implicit context: Context) = {
+    evalExpression(tmpl, context).asBoolean ==> expt
+  }
+
+  def validateExpression(tmpl: String, expt: Double)(implicit context: Context) = {
+    evalExpression(tmpl, context).asDouble ==> expt
+  }
+
+  def evalExpression(tmpl: String, context: Context) = {
+    val t = new TemplateExpressionInst(tmpl, instrumentLevel)
+    totalOps += t.parseOps
+    val err = t.error
+    err ==> None
+    t.eval(context)
+  }
+
   def parseError(tmpl: String, expt: String)(implicit context: Context) = {
     val t = new TemplateInst(tmpl, instrumentLevel)
+    totalOps += t.parseOps
+    val err = t.error
+    assert(err.nonEmpty && err.get.startsWith(expt))
+  }
+
+  def expressionParseError(tmpl: String, expt: String)(implicit context: Context) = {
+    val t = new TemplateExpressionInst(tmpl, instrumentLevel)
     totalOps += t.parseOps
     val err = t.error
     assert(err.nonEmpty && err.get.startsWith(expt))

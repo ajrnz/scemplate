@@ -1,5 +1,8 @@
 package ajr.scemplate
 
+import fastparse.core.Parsed
+import fastparse.core.Parser
+
 
 private object TemplateParser {
   val White = fastparse.WhitespaceApi.Wrapper{
@@ -87,12 +90,13 @@ private object TemplateParser {
 }
 
 
-class Template(templateText: String) {
-  import fastparse.core.Parsed
-  import fastparse.core.Parser
 
+trait TemplateBase[X] {
   protected val instrumentLevel: Int = 0
   protected var totalOps = 0
+
+  protected val templateParser: Parser[X, Char, String]
+  val templateText: String
 
   private val instrumentFunction = (parser: Parser[_,Char,String], index: Int, continuation: () => Parsed[_, Char,String]) => {
     totalOps += 1
@@ -102,9 +106,9 @@ class Template(templateText: String) {
 
   def error = tree.left.toOption
 
-  private val tree: Either[String, TemplateExpr] = {
+  protected val tree: Either[String, X] = {
     val start = System.currentTimeMillis
-    TemplateParser.mainDoc.parse(templateText, instrument = if (instrumentLevel>0) instrumentFunction else null) match {
+    templateParser.parse(templateText, instrument = if (instrumentLevel>0) instrumentFunction else null) match {
       case Parsed.Success(output, _) =>
         val parseTime = System.currentTimeMillis - start
         if (instrumentLevel>1) {
@@ -126,58 +130,8 @@ class Template(templateText: String) {
     (lines.size, lines.last.length)
   }
 
-  def render(context: Context): String =  {
-    tree match {
-      case Right(template) =>
-        val sb = new StringBuilder
-        render(template, context, sb)
-        sb.result()
 
-      case Left(err) =>
-        throw new TemplateException(s"Cannot render invalid template: $err")
-    }
-  }
-
-  private def render(template: TemplateExpr, context: Context, sb: StringBuilder): Context = {
-    template match {
-      case MacroDef(name, args, body) =>
-        context.withFunctions(name -> FunctionSpec(args.size, {
-          argValExprs =>
-            val argVals = argValExprs.map(argValExpr => evalValue(argValExpr, context))
-            val newContext = context.withValues(args.zip(argVals): _*)
-            val tsb = new StringBuilder
-            render(body, newContext, tsb)
-            StringValue(tsb.result())
-        }))
-
-      case Sequence(items) =>
-        items.foldLeft(context)((ctx, item) => render(item, ctx, sb))
-        context
-
-      case Literal(str) =>
-        sb ++= str
-        context
-
-      case value: Value =>
-        sb ++= evalValue(value, context).asString
-        context
-
-      case ForLoop(index, array, expr) =>
-        val prim = evalValue(array, context)
-        prim.asSeq.foreach{ item =>
-          render(expr, context.withValues(index -> item), sb)
-        }
-        context
-
-      case IfThenElse(pred, thenExpr, elseExpr) =>
-        val predValue = evalValue(pred, context).asBoolean
-        val expr = if (predValue) thenExpr else elseExpr
-        render(expr, context, sb)
-        context
-    }
-  }
-
-  private def evalValue(value: Value, context: Context): TemplateValue = {
+  protected def evalValue(value: Value, context: Context): TemplateValue = {
     value match  {
       case x: StringValue => x
       case x: IntValue => x
@@ -292,3 +246,72 @@ class Template(templateText: String) {
     }
   }
 }
+class TemplateExpression(val templateText: String) extends TemplateBase[Value] {
+  protected lazy val templateParser = TemplateParser.expression
+
+  def eval(context: Context): TemplateValue =  {
+    tree match {
+      case Right(value) =>
+        evalValue(value, context)
+
+      case Left(err) =>
+        throw new TemplateException(s"Cannot render invalid expression: $err")
+    }
+  }
+}
+
+class Template(val templateText: String) extends TemplateBase[Sequence] {
+  protected lazy val templateParser = TemplateParser.mainDoc
+
+  def render(context: Context): String =  {
+    tree match {
+      case Right(template) =>
+        val sb = new StringBuilder
+        render(template, context, sb)
+        sb.result()
+
+      case Left(err) =>
+        throw new TemplateException(s"Cannot render invalid template: $err")
+    }
+  }
+
+  private def render(template: TemplateExpr, context: Context, sb: StringBuilder): Context = {
+    template match {
+      case MacroDef(name, args, body) =>
+        context.withFunctions(name -> FunctionSpec(args.size, {
+          argValExprs =>
+            val argVals = argValExprs.map(argValExpr => evalValue(argValExpr, context))
+            val newContext = context.withValues(args.zip(argVals): _*)
+            val tsb = new StringBuilder
+            render(body, newContext, tsb)
+            StringValue(tsb.result())
+        }))
+
+      case Sequence(items) =>
+        items.foldLeft(context)((ctx, item) => render(item, ctx, sb))
+        context
+
+      case Literal(str) =>
+        sb ++= str
+        context
+
+      case value: Value =>
+        sb ++= evalValue(value, context).asString
+        context
+
+      case ForLoop(index, array, expr) =>
+        val prim = evalValue(array, context)
+        prim.asSeq.foreach{ item =>
+          render(expr, context.withValues(index -> item), sb)
+        }
+        context
+
+      case IfThenElse(pred, thenExpr, elseExpr) =>
+        val predValue = evalValue(pred, context).asBoolean
+        val expr = if (predValue) thenExpr else elseExpr
+        render(expr, context, sb)
+        context
+    }
+  }
+}
+
