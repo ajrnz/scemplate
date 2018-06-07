@@ -59,18 +59,18 @@ private object TemplateParser {
       if (op == "+") Add(c, value) else Subtract(c, value)
     }
   }
-  val andOr: P[Value] = P(addSub ~ (("&&"|"||").! ~/ addSub).rep).map{x =>
-    x._2.foldLeft(x._1){case(c, (op, value)) =>
-      if (op == "&&") And(c, value) else Or(c, value)
-    }
-  }
-  val conditional: P[Value] = P(andOr ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~/ andOr).rep).map{x =>
+  val conditional: P[Value] = P(addSub ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~/ addSub).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       ConditionalExpr(c, op, value)
     }
   }
+  val andOr: P[Value] = P(conditional ~ (("&&"|"||").! ~/ conditional).rep).map{x =>
+    x._2.foldLeft(x._1){case(c, (op, value)) =>
+      if (op == "&&") And(c, value) else Or(c, value)
+    }
+  }
 
-  val expression:     P[Value] = P(conditional)
+  val expression:     P[Value] = P(andOr)
   val evalExpression: P[TemplateExpr] = P("{" ~ expression ~ "}")
   def cmd(cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
   val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))

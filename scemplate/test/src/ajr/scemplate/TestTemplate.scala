@@ -104,6 +104,7 @@ object TemplateTest extends TestSuite with TestHelper {
       'greaterThanEqual3 - validate("${1 >= 2}", "false")
       'diffTypes - intercept[BadTypeException] { validate("${2 == false}", "true") }
       'precedence - validate("${(1+2)*3-4 == 4-1*4+(4/2)}", "false")
+      'precedence2 - validate("""${"test" == "test" && "it" == "it"}""", "true")
       'multiPrecedence - validate("${1 == 2 == false}", "true")
       'multiBrackets - validate("${false == (1 == 2)}", "true")
       'multiInvalid - intercept[BadTypeException] { validate("${false == 1 == 2}", "ex") }
