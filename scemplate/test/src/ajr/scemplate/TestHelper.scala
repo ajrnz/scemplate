@@ -32,6 +32,7 @@ trait TestHelper extends TestSuite {
       "this" -> "THIS",
       "that" -> "THAT",
       "people" -> List("andrew","fred","jim","sally","brenda"),
+      "abbrev" -> Map("lol" -> "laugh out loud", "imo" -> "in my opinion"),
       "oddNumbers" -> Seq(1,3,5,7,9),
       "titleString" -> "This is my title",
       "user" -> Employee(Person("Andrew", 21, Seq("superstar", "humble")), 80000, true)

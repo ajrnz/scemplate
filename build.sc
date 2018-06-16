@@ -8,7 +8,7 @@ trait ScemplatePlublishModule extends PublishModule {
   def publishVersion = "0.0.5-SNAPSHOT"
 
   def pomSettings = PomSettings(
-    description = artifactName() + " - scala template engine",
+    description = artifactName() + " - scala template engine and simple expression evaluator",
     organization = "com.github.ajrnz",
     url = "https://github.com/ajrnz/scemplate",
     licenses = Seq(License.MIT),

@@ -127,5 +127,17 @@ object TemplateTest extends TestSuite with TestHelper {
     'convenienceMethod - {
       Template.render("$OneString") ==> "1"
     }
+
+    'arrays - {
+      'apply - validate("${oddNumbers(4)}", "9")
+      'outOfBounds - intercept[IndexOutOfBoundsException] { validate("${oddNumbers(5)}", "") }
+      'multiDim - intercept[BadTypeException] { validate("${oddNumbers(0,1)}", "") }
+    }
+    'map - {
+      'apply - validate("""${abbrev("imo")}""", "in my opinion")
+      'notFound - intercept[NoSuchElementException] { validate("""${abbrev("rtfm")}""", "") }
+      'notFoundType - intercept[NoSuchElementException] { validate("""${abbrev(0)}""", "") }
+      'multiDim - intercept[BadTypeException] { validate("""${abbrev("a", "b")}""", "") }
+    }
   }
 }

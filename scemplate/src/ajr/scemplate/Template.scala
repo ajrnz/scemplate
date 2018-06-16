@@ -157,14 +157,33 @@ trait TemplateBase[X] {
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
-        val functionSpec = context.functions.get(name) match {
-          case Some(func) => func
-          case None => throw new BadNameException(s"Unknown function: $name")
-        }
-        if (paramValues.size != functionSpec.numParams)
-          throw new BadTypeException(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
-        functionSpec.function(paramValues)
+        // first try it as a variable, than as a function
+        context.values.value.get(name) match {
+          case Some(value) =>
+            if (paramValues.length != 1)
+              throw new BadTypeException(s"$name - too many parameters")
+            else {
+              value match {
+                case ArrayValue(items) =>
+                  items(paramValues.head.asInt)
 
+                case MapValue(mapValue) =>
+                  mapValue(paramValues.head.asString)
+
+                case _ =>
+                  throw new BadNameException(s"Cannot call apply() on $name which has value $value")
+              }
+            }
+
+          case None =>
+            val functionSpec = context.functions.get(name) match {
+              case Some(func) => func
+              case None => throw new BadNameException(s"Unknown function: $name")
+            }
+            if (paramValues.size != functionSpec.numParams)
+              throw new BadTypeException(s"Function $name(...) has ${functionSpec.numParams} parameters but ${paramValues.size} passed")
+            functionSpec.function(paramValues)
+        }
       case cond: ConditionalExpr =>
         val a = evalValue(cond.a, context)
         val b = evalValue(cond.b, context)

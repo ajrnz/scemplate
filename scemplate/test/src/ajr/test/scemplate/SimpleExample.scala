@@ -32,7 +32,7 @@ object SimpleExample extends TestHelper
       "cutoffAge" -> 30
     )
     .withFunctions(
-      "firstName" -> function(n => n.asString.split(" ").head)
+      "firstName" -> function(_.asString.split(" ").head)
     )
 
   val templateText =
