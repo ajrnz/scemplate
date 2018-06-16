@@ -114,7 +114,7 @@ object TemplateTest extends TestSuite with TestHelper {
       'mapConversion - {
         val strs = Map("one" -> "1", "two" -> "2")
         val ints = Map("three" -> 3, "four" -> 4)
-        val ctx = Context().withValues(strs).withValues(ints)
+        val ctx = Context().withMap(strs).withMap(ints)
         validate("$one $two ${three * four}", "1 2 12")(ctx)
       }
     }
@@ -122,6 +122,10 @@ object TemplateTest extends TestSuite with TestHelper {
     'errorMessages - {
       'ifStart - parseError("${if true}blah", "Error failed expecting endif")
       //'unclosedString - parseError("""${OneString == "bad}""", """Error failed expecting "\"""")
+    }
+
+    'convenienceMethod - {
+      Template.render("$OneString") ==> "1"
     }
   }
 }

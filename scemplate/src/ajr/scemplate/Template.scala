@@ -260,6 +260,10 @@ class TemplateExpression(val templateText: String) extends TemplateBase[Value] {
   }
 }
 
+object Template {
+  def render(template: String)(implicit context: Context): String = new Template(template).render(context)
+}
+
 class Template(val templateText: String) extends TemplateBase[Sequence] {
   protected lazy val templateParser = TemplateParser.mainDoc
 

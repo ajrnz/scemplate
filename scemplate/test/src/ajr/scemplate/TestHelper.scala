@@ -31,7 +31,6 @@ trait TestHelper extends TestSuite {
       "age" -> 18,
       "this" -> "THIS",
       "that" -> "THAT",
-      "contract.name.first" -> "Fred",
       "people" -> List("andrew","fred","jim","sally","brenda"),
       "oddNumbers" -> Seq(1,3,5,7,9),
       "titleString" -> "This is my title",

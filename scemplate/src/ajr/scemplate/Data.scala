@@ -4,6 +4,7 @@ package ajr.scemplate
 class TemplateException(msg: String, cause: Throwable = null) extends Exception(msg, cause)
 class BadTypeException(msg: String, cause: Throwable = null) extends TemplateException(msg, cause)
 class BadNameException(msg: String, cause: Throwable = null) extends TemplateException(msg, cause)
+class BadPathException(msg: String, cause: Throwable = null) extends TemplateException(msg, cause)
 
 sealed trait TemplateExpr
 case class Sequence(items: Seq[TemplateExpr]) extends TemplateExpr
@@ -148,7 +149,7 @@ case class Context(values: MapValue = MapValue.empty, functions: Map[String, Fun
   def withValues(items: (String, TemplateValue)*): Context = {
     copy(values = MapValue(values.value ++ items))
   }
-  def withValues[T](dict: Map[String, T])(implicit toValue: T => TemplateValue): Context = {
+  def withMap[T](dict: Map[String, T])(implicit toValue: T => TemplateValue): Context = {
     copy(values = MapValue(values.value ++ dict.map{case(k,v) => k -> toValue(v)}))
   }
   def withFunctions(items: (String, FunctionSpec)*): Context = {
