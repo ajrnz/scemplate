@@ -5,7 +5,7 @@ import ammonite.ops._
 
 trait ScemplatePlublishModule extends PublishModule {
   def artifactName = "scemplate"
-  def publishVersion = "0.0.4-SNAPSHOT"
+  def publishVersion = "0.0.5-SNAPSHOT"
 
   def pomSettings = PomSettings(
     description = artifactName() + " - scala template engine",
@@ -28,10 +28,21 @@ object scemplate extends ScalaModule with ScemplatePlublishModule {
 
   def ivyDeps = Agg(
     ivy"com.lihaoyi::fastparse:1.0.0",
+    ivy"com.lihaoyi::ammonite-ops:1.1.2",
   )
 
   object test extends Tests {
     def testFrameworks = Seq("utest.runner.Framework")
+
+    def test(args: String*) = T.command {
+      jar() // make a jar of the test resources for use during the tests
+      super.test(args: _*)()
+    }
+
+    def testLocal(args: String*) = T.command {
+      jar() // see above
+      super.testLocal(args: _*)()
+    }
 
     def ivyDeps = Agg(
       ivy"com.lihaoyi::utest::0.6.4",
