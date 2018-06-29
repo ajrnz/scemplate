@@ -109,7 +109,7 @@ object TestExample extends TestHelper
   val tests = Tests {
     'example - {
       validate(templateText, expected)
-      opDiff("Example", totalOps, 1098)
+      opDiff("Example", totalOps, 1120)
     }
 
     'performance - {

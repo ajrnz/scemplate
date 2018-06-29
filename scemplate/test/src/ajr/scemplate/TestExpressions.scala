@@ -4,7 +4,7 @@ import utest._
 
 object TestExpressions extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(236)
+    opCheck(247)
   }
 
   val tests = Tests {
@@ -19,7 +19,7 @@ object TestExpressions extends TestSuite with TestHelper {
       'addString  - validateExpression("""OneString + " & only"""", "1 & only")
     }
     'badExpression - {
-      'empty - expressionParseError("", "Error failed expecting function | brackets | value")
+      'empty - expressionParseError("", "Error failed expecting defined | function | brackets | value")
       'intAndDouble - intercept[BadTypeException] { validateExpression("1 == 1.2", "") }
     }
   }

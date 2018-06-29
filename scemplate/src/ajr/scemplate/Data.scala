@@ -111,6 +111,8 @@ object MapValue {
 case class Variable(name: Seq[String]) extends Value
 case class Function(name: String, params: Seq[Value]) extends Value
 
+case class Defined(variable: Variable) extends Value
+
 case class Negate(a: Value) extends Value
 case class Add(a: Value, b: Value) extends Value
 case class Subtract(a: Value, b: Value) extends Value

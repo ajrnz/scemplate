@@ -4,7 +4,7 @@ import utest._
 
 object TestCaseClasses extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(182)
+    opCheck(186)
   }
 
   val tests = Tests {

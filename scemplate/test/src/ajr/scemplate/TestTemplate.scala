@@ -6,7 +6,7 @@ import ajr.scemplate.implicits._
 object TemplateTest extends TestSuite with TestHelper {
 
   override def utestAfterAll() = {
-    opCheck(3924)
+    opCheck(5023)
   }
 
 
@@ -133,11 +133,21 @@ object TemplateTest extends TestSuite with TestHelper {
       'outOfBounds - intercept[IndexOutOfBoundsException] { validate("${oddNumbers(5)}", "") }
       'multiDim - intercept[BadTypeException] { validate("${oddNumbers(0,1)}", "") }
     }
+
     'map - {
       'apply - validate("""${abbrev("imo")}""", "in my opinion")
       'notFound - intercept[NoSuchElementException] { validate("""${abbrev("rtfm")}""", "") }
       'notFoundType - intercept[NoSuchElementException] { validate("""${abbrev(0)}""", "") }
       'multiDim - intercept[BadTypeException] { validate("""${abbrev("a", "b")}""", "") }
+    }
+
+    'defined - {
+      'present - validate("${defined(OneString)}", "true")
+      'absent - validate("${defined(NotHere)}", "false")
+      'caseClassPresent1 - validate("${defined(user.person.name)}", "true")
+      'caseClassPresent2 - validate("${defined(user)}", "true")
+      'caseClassAbsent1 - validate("${defined(user.nothere.name)}", "false")
+      'caseClassAbsent2 - validate("${defined(a.b.c)}", "false")
     }
   }
 }

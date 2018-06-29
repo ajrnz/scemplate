@@ -39,13 +39,14 @@ private object TemplateParser {
 
   val literal       = P(double | integer | string | boolean)
   val variable      = P(ident).map(x => Variable(Seq(x)))
-  val variablePath  = P(ident.repX(min=1, sep=".")).map(x => Variable(x))
+  val variablePath  = P(ident.repX(min=1, sep=".")).map(Variable)
   val value         = P(literal | variablePath)
+  val defined       = P(("defined" ~ "(" ~ variablePath ~ ")").map(Defined))
   val function      = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
 
   val brackets      = P("(" ~/ expression ~ ")")
 
-  val valueType: P[Value] = P("!".!.? ~ (function | brackets | value)).map{x=> x._1 match {
+  val valueType: P[Value] = P("!".!.? ~ (defined | function | brackets | value)).map{x=> x._1 match {
     case Some(_) => Negate(x._2)
     case None    => x._2
   }}
@@ -130,6 +131,20 @@ trait TemplateBase[X] {
     (lines.size, lines.last.length)
   }
 
+  private def evalVariable(context: Context, path: Seq[String]) = {
+    path.foldLeft[Either[String, TemplateValue]](Right(context.values)) { (ctx, key) =>
+      ctx match {
+        case l@Left(_) => l
+
+        case Right(MapValue(m)) =>
+          m.get(key).toRight(s"$key not found")
+
+        case Right(x) =>
+          Left(s"$key not found")
+      }
+    }
+  }
+
 
   protected def evalValue(value: Value, context: Context): TemplateValue = {
     value match  {
@@ -141,19 +156,14 @@ trait TemplateBase[X] {
       case x: MapValue => x
 
       case Variable(path) =>
-        path.foldLeft[Either[String,TemplateValue]](Right(context.values)){ (ctx, key) => ctx match {
-          case l @ Left(_) => l
-
-          case Right(MapValue(m)) =>
-            m.get(key).toRight(s"$key not found")
-
-          case Right(x) =>
-            Left(s"$key not found")
-        }} match {
+        evalVariable(context, path) match {
           case Right(x) => x
           case Left(msg) =>
             throw new BadNameException(msg + (if (path.size>1) s" in ${path.mkString(".")}" else ""))
         }
+
+      case Defined(variable) =>
+        BooleanValue(evalVariable(context, variable.name).isRight)
 
       case Function(name, params) =>
         val paramValues = params.map(p => evalValue(p, context))
