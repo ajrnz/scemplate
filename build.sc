@@ -5,7 +5,7 @@ import ammonite.ops._
 
 trait ScemplatePlublishModule extends PublishModule {
   def artifactName = "scemplate"
-  def publishVersion = "0.0.6-SNAPSHOT"
+  def publishVersion = "0.5.1-SNAPSHOT"
 
   def pomSettings = PomSettings(
     description = artifactName() + " - scala template engine and simple expression evaluator",
