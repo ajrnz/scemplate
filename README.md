@@ -4,8 +4,8 @@ Scemplate is a templating library designed to work well from Scala and to be eas
 of other templating libraries such as [Jinja](http://jinja.pocoo.org/), [Freemarker](https://freemarker.apache.org/),
 [mustache](https://mustache.github.io/) and others but aims to be fairly minimal. 
 
-* SBT: `"com.github.ajrnz" %% "scemplate" % "0.5.0"`
-* Mill: `ivy"com.github.ajrnz::scemplate:0.5.0"`
+* SBT: `"com.github.ajrnz" %% "scemplate" % "0.5.1"`
+* Mill: `ivy"com.github.ajrnz::scemplate:0.5.1"`
 
 ## Features
 * A general purpose templating language. Not optimized for any special use case (eg HTML). 
@@ -335,6 +335,6 @@ to bring the relevant classes and implicits into scope.
 
 ## Change log
 
-### 0.5.0
+### 0.5.1
 
 - First release

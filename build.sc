@@ -22,13 +22,10 @@ trait ScemplatePlublishModule extends PublishModule {
 object scemplate extends ScalaModule with ScemplatePlublishModule {
   def scalaVersion = "2.12.6"
 
-  def compileIvyDeps = Agg(
-    ivy"com.propensive::magnolia:0.7.1"
-  )
-
   def ivyDeps = Agg(
     ivy"com.lihaoyi::fastparse:1.0.0",
     ivy"com.lihaoyi::ammonite-ops:1.1.2",
+    ivy"com.propensive::magnolia:0.7.1",
   )
 
   object test extends Tests {
@@ -45,8 +42,7 @@ object scemplate extends ScalaModule with ScemplatePlublishModule {
     }
 
     def ivyDeps = Agg(
-      ivy"com.lihaoyi::utest::0.6.4",
-      ivy"com.propensive::magnolia:0.7.1"
+      ivy"com.lihaoyi::utest::0.6.4"
     )
   }
 }
