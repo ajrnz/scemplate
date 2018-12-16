@@ -4,7 +4,7 @@ import utest._
 
 object TestMacro extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(1705)
+    opCheck(1243)
   }
 
   val tests = Tests {

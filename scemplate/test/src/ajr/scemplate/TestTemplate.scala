@@ -6,7 +6,7 @@ import ajr.scemplate.implicits._
 object TemplateTest extends TestSuite with TestHelper {
 
   override def utestAfterAll() = {
-    opCheck(5023)
+    opCheck(3780)
   }
 
 

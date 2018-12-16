@@ -1,93 +1,83 @@
 package ajr.scemplate
 
-import fastparse.core.Parsed
-import fastparse.core.Parser
+import fastparse._
+import MultiLineWhitespace._
+import fastparse.internal.Instrument
 
 
 private object TemplateParser {
-  val White = fastparse.WhitespaceApi.Wrapper{
-    import fastparse.all._
-    val wsRep = P(CharIn(" \t\r\n").rep)
-    NoTrace(wsRep)
-  }
-
-  import fastparse.noApi._
-  import White._
-
   val reserved = Set("endfor", "endif", "endmacro", "else", "true", "false")
 
-  val ws            = P(CharIn(" \t\r\n"))
-  val newline       = "\r\n" | "\n"
-  val ccx           = "}" ~~ newline.?
-  val identStart    = CharPred(x => x.isLetter || x == '_')
-  val identChar     = CharsWhile(x => x.isLetterOrDigit || x == '_')
-  val ident         = P((identStart ~~ identChar.?).!).filter(!reserved(_)).opaque("identifier")
-  val dollar        = P("$").map(_ => Literal("$"))
+  def ws           [_: P] = P(CharIn(" \t\r\n"))
+  def newline      [_: P] = "\r\n" | "\n"
+  def ccx          [_: P] = "}" ~~ newline.?
+  def identStart   [_: P] = CharPred(x => x.isLetter || x == '_')
+  def identChar    [_: P] = CharsWhile(x => x.isLetterOrDigit || x == '_')
+  def ident        [_: P] = P((identStart ~~ identChar.?).!).filter(!reserved(_)).opaque("identifier")
+  def dollar       [_: P] = P("$").map(_ => Literal("$"))
 
-  val hexDigit      = P(CharIn('0'to'9', 'a'to'f', 'A'to'F'))
-  val unicodeEscape = P("u" ~~ (hexDigit ~~ hexDigit ~~ hexDigit ~~ hexDigit).!)
+  def hexDigit     [_: P] = P(CharIn("0-9", "a-f", "A-F"))
+  def unicodeEscape[_: P] = P("u" ~~ (hexDigit ~~ hexDigit ~~ hexDigit ~~ hexDigit).!)
     .map(h => Character.valueOf(Integer.parseInt(h, 16).toChar).toString)
-  val charEscape    = P(CharIn("tbnrf'\"\\").!.map(c => "\t\b\n\r\f\'\"\\"("tbnrf'\"\\".indexOf(c(0))).toString))
-  val escape        = P( "\\" ~~ (charEscape | unicodeEscape) )
-  val strChars      = P(CharsWhile(c => c != '"' && c != '\\').!)
-  val string        = P("\"" ~~ (strChars | escape).repX ~~ "\"").map(x => StringValue(x.mkString)) // XXX first ~~ should be ~~/
+  def charEscape   [_: P] = P(CharIn("tbnrf'\"\\\\").!.map(c => "\t\b\n\r\f\'\"\\"("tbnrf'\"\\".indexOf(c(0))).toString))
+  def escape       [_: P] = P( "\\" ~~ (charEscape | unicodeEscape) )
+  def strChars     [_: P] = P(CharsWhile(c => c != '"' && c != '\\').!)
+  def string       [_: P] = P("\"" ~~ (strChars | escape).repX ~~ "\"").map(x => StringValue(x.mkString)) // XXX first ~~ should be ~~/
 
-  val digit         = P(CharPred(_.isDigit))
-  val integer       = P(("+" | "-").? ~~ digit.repX(min=1)).!.map(v => IntValue(v.toInt))
-  val double        = P(("+" | "-").? ~~ digit.repX(min=1) ~~ "." ~~ digit.repX(min=1)).!.map(v => DoubleValue(v.toDouble))
-  val boolean       = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
+  def digit        [_: P] = P(CharPred(_.isDigit))
+  def integer      [_: P] = P(("+" | "-").? ~~ digit.repX(1)).!.map(v => IntValue(v.toInt))
+  def double       [_: P] = P(("+" | "-").? ~~ digit.repX(1) ~~ "." ~~ digit.repX(1)).!.map(v => DoubleValue(v.toDouble))
+  def boolean      [_: P] = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
+  def literal      [_: P] = P(double | integer | string | boolean)
+  def variable     [_: P] = P(ident).map(x => Variable(Seq(x)))
+  def variablePath [_: P] = P(ident.repX(min=1, sep=".")).map(Variable)
+  def value        [_: P] = P(literal | variablePath)
+  def defined      [_: P] = P(("defined" ~ "(" ~ variablePath ~ ")").map(Defined))
+  def function     [_: P] = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
+  def brackets     [_: P] = P("(" ~/ expression ~ ")")
 
-  val literal       = P(double | integer | string | boolean)
-  val variable      = P(ident).map(x => Variable(Seq(x)))
-  val variablePath  = P(ident.repX(min=1, sep=".")).map(Variable)
-  val value         = P(literal | variablePath)
-  val defined       = P(("defined" ~ "(" ~ variablePath ~ ")").map(Defined))
-  val function      = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
-
-  val brackets      = P("(" ~/ expression ~ ")")
-
-  val valueType: P[Value] = P("!".!.? ~ (defined | function | brackets | value)).map{x=> x._1 match {
+  def valueType[_: P]: P[Value] = P("!".!.? ~ (defined | function | brackets | value)).map{x=> x._1 match {
     case Some(_) => Negate(x._2)
     case None    => x._2
   }}
 
-  val multiDivMod: P[Value] = P(valueType ~ (("*" | "/" | "%").! ~/ valueType).rep).map{x =>
+  def multiDivMod[_: P]: P[Value] = P(valueType ~ (("*" | "/" | "%").! ~/ valueType).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) => op match {
       case "*" => Multiply(c, value)
       case "/" => Divide(c, value)
       case "%" => Modulus(c, value)
     }}
   }
-  val addSub: P[Value] = P(multiDivMod ~ (("+"|"-").! ~/ multiDivMod).rep).map{x =>
+  def addSub[_: P]: P[Value] = P(multiDivMod ~ (("+"|"-").! ~/ multiDivMod).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       if (op == "+") Add(c, value) else Subtract(c, value)
     }
   }
-  val conditional: P[Value] = P(addSub ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~/ addSub).rep).map{x =>
+  def conditional[_: P]: P[Value] = P(addSub ~ (("==" | "!=" |  ">=" | ">" | "<=" | "<").! ~/ addSub).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       ConditionalExpr(c, op, value)
     }
   }
-  val andOr: P[Value] = P(conditional ~ (("&&"|"||").! ~/ conditional).rep).map{x =>
+  def andOr[_: P]: P[Value] = P(conditional ~ (("&&"|"||").! ~/ conditional).rep).map{x =>
     x._2.foldLeft(x._1){case(c, (op, value)) =>
       if (op == "&&") And(c, value) else Or(c, value)
     }
   }
 
-  val expression:     P[Value] = P(andOr)
-  val evalExpression: P[TemplateExpr] = P("{" ~ expression ~ "}")
-  def cmd(cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
-  val forLoop         = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
-  val ifThenElse      = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~~ mainText ~~ (cmd("else") ~/ mainText).? ~~ cmd("endif"))
+  def expression      [_: P]: P[Value] = P(andOr)
+  def evalExpression  [_: P]: P[TemplateExpr] = P("{" ~ expression ~ "}")
+  def cmd             [_: P](cmdName: String): P[Unit] = P("${" ~ cmdName ~ ccx).opaque(s"$cmdName")
+  def forLoop         [_: P] = P(("{" ~ "for" ~~ ws ~/ ident ~ "in" ~ expression ~ ccx ~~ mainText ~~ cmd("endfor")).map(x => ForLoop(x._1, x._2, x._3)))
+  def ifThenElse      [_: P] = P(("{" ~ "if" ~~ ws ~/ conditional ~ ccx ~~ mainText ~~ (cmd("else") ~/ mainText).? ~~ cmd("endif"))
     .map(x => IfThenElse(x._1, x._2, x._3.getOrElse(EmptyLiteral))))
-  val macroTemplate   = P(("{" ~ "macro" ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~~ mainText ~~ cmd("endmacro")))
+  def macroTemplate   [_: P] = P(("{" ~ "macro" ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~~ mainText ~~ cmd("endmacro")))
     .map(x=> MacroDef(x._1, x._2, x._3))
-  val construct: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
-  val untilDollar     = P(CharsWhile(_ != '$').!).map(Literal)
-  val dollarExpression: P[TemplateExpr] = P("$" ~~ (dollar | construct | variable | evalExpression))
-  val mainText: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence)
+  def construct       [_: P]: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
+  def untilDollar     [_: P]     = P(CharsWhile(_ != '$').!).map(Literal)
+  def dollarExpression[_: P]: P[TemplateExpr] = P("$" ~~ (dollar | construct | variable | evalExpression))
+  def mainText        [_: P]: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence)
 
-  val mainDoc: P[Sequence] = P(Start ~~ mainText ~~ End)
+  def mainDoc         [_: P]: P[Sequence] = P(Start ~~ mainText ~~ End)
 }
 
 
@@ -96,20 +86,23 @@ trait TemplateBase[X] {
   protected val instrumentLevel: Int = 0
   protected var totalOps = 0
 
-  protected val templateParser: Parser[X, Char, String]
+  protected def templateParser: P[_] => P[X]
   val templateText: String
 
-  private val instrumentFunction = (parser: Parser[_,Char,String], index: Int, continuation: () => Parsed[_, Char,String]) => {
-    totalOps += 1
-    if (instrumentLevel>1)
-      println(f"Call: ${parser.toString}%-20s $index%3d: ${templateText.drop(index).take(20).replaceAll("\n", "\\\\n")}")
+  private val instrument = new Instrument {
+    def beforeParse(parser: String, index: Int): Unit = {
+      totalOps += 1
+      if (instrumentLevel>1)
+        println(f"Call: ${parser.toString}%-20s $index%3d: ${templateText.drop(index).take(20).replaceAll("\n", "\\\\n")}")
+    }
+    def afterParse(parser: String, index: Int, success: Boolean): Unit = ()
   }
 
   def error = tree.left.toOption
 
   protected val tree: Either[String, X] = {
     val start = System.currentTimeMillis
-    templateParser.parse(templateText, instrument = if (instrumentLevel>0) instrumentFunction else null) match {
+    parse(templateText, templateParser, instrument = if (instrumentLevel>0) instrument else null) match {
       case Parsed.Success(output, _) =>
         val parseTime = System.currentTimeMillis - start
         if (instrumentLevel>1) {
@@ -276,7 +269,7 @@ trait TemplateBase[X] {
   }
 }
 class TemplateExpression(val templateText: String) extends TemplateBase[Value] {
-  protected lazy val templateParser = TemplateParser.expression
+  protected def templateParser = TemplateParser.expression(_)
 
   def eval(context: Context): TemplateValue =  {
     tree match {
@@ -294,7 +287,7 @@ object Template {
 }
 
 class Template(val templateText: String) extends TemplateBase[Sequence] {
-  protected lazy val templateParser = TemplateParser.mainDoc
+  override protected def templateParser = TemplateParser.mainDoc(_)
 
   def render(context: Context): String =  {
     tree match {
@@ -346,5 +339,6 @@ class Template(val templateText: String) extends TemplateBase[Sequence] {
         context
     }
   }
+
 }
 

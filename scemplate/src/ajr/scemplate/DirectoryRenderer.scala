@@ -1,9 +1,12 @@
 package ajr.scemplate
 
 import java.io.File
+import java.io.InputStream
 import java.util.jar.JarFile
+
+import os._
+
 import scala.collection.JavaConverters._
-import ammonite.ops._
 import geny.Generator
 import ajr.scemplate.Template.render
 
@@ -13,11 +16,12 @@ object DirectoryRenderer {
   type DirectoryWriter = (RelPath, Option[String]) => Unit
 
   def fileSystemReader(basePath: Path, ignorePath: RelPath => Boolean = _ => false): DirectoryReader = {
-    Generator.from(ls.rec.!(basePath).listed.filterNot(ignorePath))
-      .map{ relpath =>
-        val f = (basePath / relpath)
-        if (f.isFile)
-          relpath -> Some(read(f))
+    os.walk.stream(basePath)
+      .map(p => (p, p.relativeTo(basePath)))
+      .filter(r => !ignorePath(r._2))
+      .map{ case(path, relpath) =>
+        if (isFile(path))
+          relpath -> Some(read(path))
         else
           relpath -> None
       }
@@ -29,12 +33,10 @@ object DirectoryRenderer {
 
       val fullPath = basePath / path
       itemContent match {
-        case None =>
-          if (!fullPath.toIO.exists)
-            mkdir(fullPath)
-
         case Some(content) =>
-          write(fullPath, content)
+          write.over(fullPath, content, createFolders = true)
+
+        case None =>
       }
     }
 
@@ -56,7 +58,11 @@ object DirectoryRenderer {
             RelPath(e.getName.substring(basePathLen)) -> None
           else {
             val is = jar.getInputStream(e)
-            val data = read(is)
+            // XXX yuk! can we do better here?
+            val rp = new ReadablePath {
+              override def toSource: Source = is
+            }
+            val data = read(rp)
             is.close()
             RelPath(e.getName.substring(basePathLen)) -> Some(data)
           }

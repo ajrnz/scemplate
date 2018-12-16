@@ -4,7 +4,7 @@ import utest._
 
 object TestConstructs extends TestSuite with TestHelper {
   override def utestAfterAll() = {
-    opCheck(1348)
+    opCheck(1055)
   }
 
   val tests = Tests {

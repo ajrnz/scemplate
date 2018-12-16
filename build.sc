@@ -20,11 +20,11 @@ trait ScemplatePlublishModule extends PublishModule {
 }
 
 object scemplate extends ScalaModule with ScemplatePlublishModule {
-  def scalaVersion = "2.12.6"
+  def scalaVersion = "2.12.8"
 
   def ivyDeps = Agg(
-    ivy"com.lihaoyi::fastparse:1.0.0",
-    ivy"com.lihaoyi::ammonite-ops:1.1.2",
+    ivy"com.lihaoyi::fastparse:2.0.5",
+    ivy"com.lihaoyi::os-lib:0.2.6",
     ivy"com.propensive::magnolia:0.7.1",
   )
 

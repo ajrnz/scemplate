@@ -1,16 +1,16 @@
 package ajr.scemplate
 
-import ammonite.ops._
+import os._
 import utest._
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 object TestDirectoryRenderer extends TestHelper {
   val allDir = pwd / 'scemplate / 'test / 'resources / 'templates / 'all
   val outDir = pwd / 'out / 'testDirRender
-  rm.!(outDir)
+  remove.all(outDir)
 
   val tests = Tests {
-    'allTemplate - {
+   'allTemplate - {
       def checkContent(out: Path, shouldHaveReadme: Boolean = true) = {
         haveDir(out / "1")
         haveFile(out / "1" / "THIS.txt", "This is: THIS\n")
@@ -29,6 +29,11 @@ object TestDirectoryRenderer extends TestHelper {
 
           DirectoryRenderer.renderTree(testContext, reader, writer)
           checkContent(out)
+        }
+
+        'fileSystemReader - {
+          val reader = DirectoryRenderer.fileSystemReader(allDir)
+          reader.toList.head ==> (RelPath("$OneString"), None)
         }
 
         'files - {
@@ -126,15 +131,15 @@ object TestDirectoryRenderer extends TestHelper {
   }
 
   def haveDir(dir: Path) = {
-    assert(dir.isDir)
+    assert(isDir(dir))
   }
 
   def noFile(dir: Path) = {
-    assert(!dir.toIO.exists)
+    assert(!exists(dir))
   }
 
   def haveFile(file: Path, expectedContent: String) = {
-    assert(file.isFile)
+    assert(isFile(file))
     val content = read(file)
     content ==> expectedContent
   }
