@@ -14,7 +14,7 @@ object CaseClassEncoder {
   }
 
   // required but not used
-  def dispatch[T](ctx: SealedTrait[Encode, T]): Encode[T] = ???
+  def dispatch[T](ctx: SealedTrait[Typeclass, T]): Typeclass[T] = ???
 
   implicit def gen[T]: Encode[T] = macro Magnolia.gen[T]
 }

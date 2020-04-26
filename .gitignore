@@ -3,4 +3,10 @@
 
 \.idea_modules/
 
+\.bloop/
+
+\.metals/
+
+\.vscode/
+
 out/

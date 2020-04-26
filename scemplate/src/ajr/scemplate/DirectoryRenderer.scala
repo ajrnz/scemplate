@@ -60,6 +60,7 @@ object DirectoryRenderer {
             val is = jar.getInputStream(e)
             // XXX yuk! can we do better here?
             val rp = new ReadablePath {
+              def getInputStream = is
               override def toSource: Source = is
             }
             val data = read(rp)

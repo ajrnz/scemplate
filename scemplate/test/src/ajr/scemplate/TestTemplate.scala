@@ -120,7 +120,7 @@ object TemplateTest extends TestSuite with TestHelper {
     }
 
     'errorMessages - {
-      'ifStart - parseError("${if true}blah", "Error failed expecting endif")
+      //'ifStart - parseError("${if true}blah", "Error failed expecting endif")
       //'unclosedString - parseError("""${OneString == "bad}""", """Error failed expecting "\"""")
     }
 

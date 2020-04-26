@@ -33,10 +33,13 @@ trait TestHelper extends TestSuite {
       "that" -> "THAT",
       "people" -> List("andrew","fred","jim","sally","brenda"),
       "abbrev" -> Map("lol" -> "laugh out loud", "imo" -> "in my opinion"),
+      "numbersMap" -> MapValue(Map("1" -> "one", "2" -> "two", "3" -> "three")),
       "oddNumbers" -> Seq(1,3,5,7,9),
       "titleString" -> "This is my title",
-      "user" -> Employee(Person("Andrew", 21, Seq("superstar", "humble")), 80000, true)
+      "user" -> Employee(Person("Andrew", 21, Seq("superstar", "humble")), 80000, true),
+      "numberTypes" -> Seq(Map("name" -> "andrew", "age" -> "21"), Map("name" -> "sally", "age" -> "39"), Map("name" -> "fred", "age" -> "34"))
     )
+    .withFunctions(Functions.stdlib: _*)
     .withFunctions(
       "lowerCase" ->      function(_.asString.toLowerCase),
       "upperCase" ->      function(_.asString.toLowerCase),

@@ -338,3 +338,10 @@ to bring the relevant classes and implicits into scope.
 ### 0.5.1
 
 - First release
+
+### 0.5.2
+
+- Release for scala 2.13
+- Update deps
+- add Stdlib functions len(), keys(), value()
+
