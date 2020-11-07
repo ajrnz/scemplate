@@ -24,6 +24,18 @@ object Functions {
         case (v: MapValue, k: StringValue) => v.value(k.asString)
         case v => throw new Exception(s"value() not valid for $v")
       }
-    }
+    },
+    "replace" -> function{ (str, find, replace) => (str, find, replace) match {
+      case (s: StringValue, f: StringValue, r: StringValue) => s.asString.replaceAll(f.asString, r.asString)
+      case _ => throw new Exception(s"replace() not valid for ($str,$find,$replace)")
+    }},
+    "toLowerCase" -> function{ sv=> sv match {
+      case (sv: StringValue) => sv.value.toLowerCase
+      case _ => throw new Exception(s"toLowerCase() not valid for $sv")
+    }},
+    "toUpperCase" -> function{ sv=> sv match {
+      case (sv: StringValue) => sv.value.toUpperCase
+      case _ => throw new Exception(s"toUpperCase() not valid for $sv")
+    }}  
   )
 }
