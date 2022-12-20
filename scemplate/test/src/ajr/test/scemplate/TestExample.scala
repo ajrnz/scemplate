@@ -107,12 +107,12 @@ object TestExample extends TestHelper
       |""".stripMargin
 
   val tests = Tests {
-    'example - {
+    test("example") {
       validate(templateText, expected)
       opDiff("Example", totalOps, 830)
     }
 
-    'performance - {
+    test("performance"){
       if (false) {
         val iterations = 100000
         val template = new Template(templateText)

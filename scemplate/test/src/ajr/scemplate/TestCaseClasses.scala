@@ -8,15 +8,15 @@ object TestCaseClasses extends TestSuite with TestHelper {
   }
 
   val tests = Tests {
-    'caseClasses - {
-      'fieldInt - validate("${user.salary}", "80000")
-      'subFieldString - validate("${user.person.name}", "Andrew")
-      'subFieldInt - validate("${user.person.age}", "21")
-      'invalidField - intercept[BadNameException] { validate("${user.invalid}", "") }
+    test("caseClasses") {
+      test("fieldInt") { validate("${user.salary}", "80000") }
+      test("subFieldString") { validate("${user.person.name}", "Andrew") }
+      test("subFieldInt") { validate("${user.person.age}", "21") }
+      test("invalidField") { intercept[BadNameException] { validate("${user.invalid}", "") } }
 
     }
 
-    'caseClassConversion - {
+    test("caseClassConversion") {
       val ccEnc = testContext.values.value("user")
       val expt = MapValue(Map(
         "person" -> MapValue(Map(

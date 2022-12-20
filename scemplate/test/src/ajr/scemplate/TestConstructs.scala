@@ -8,9 +8,9 @@ object TestConstructs extends TestSuite with TestHelper {
   }
 
   val tests = Tests {
-    'constructs - {
-      'forLoop - {
-        'basic - {
+    test("constructs") {
+      test("forLoop") {
+        test("basic") {
           val forLoopTmpl =
             """
               |Header
@@ -30,7 +30,7 @@ object TestConstructs extends TestSuite with TestHelper {
 
           validate(forLoopTmpl, expected)
         }
-        'lineEnding - {
+        test("lineEnding") {
           val forLoopTmpl =
             """
               |Header
@@ -53,7 +53,7 @@ object TestConstructs extends TestSuite with TestHelper {
 
           validate(forLoopTmpl, expected)
         }
-        'nested - {
+        test("nested") {
           val forLoopTmpl =
             """
               |Header
@@ -82,13 +82,13 @@ object TestConstructs extends TestSuite with TestHelper {
         }
       }
 
-      'ifTheElse - {
-        'ifTrue - validate("${if true}yes${endif}", "yes")
-        'ifFalse - validate("${if false}yes${endif}", "")
-        'ifElseTrue - validate("${if true}yes${else}no${endif}", "yes")
-        'ifElseFalse - validate("${if false}yes${else}no${endif}", "no")
-        'ifExpression - validate("${if age >= 18}adult${else}minor${endif}", "adult")
-        'ifLineEnding - {
+      test("ifTheElse") {
+        test("ifTrue") { validate("${if true}yes${endif}", "yes") }
+        test("ifFalse") { validate("${if false}yes${endif}", "") }
+        test("ifElseTrue") { validate("${if true}yes${else}no${endif}", "yes") }
+        test("ifElseFalse") { validate("${if false}yes${else}no${endif}", "no") }
+        test("ifExpression") { validate("${if age >= 18}adult${else}minor${endif}", "adult") }
+        test("ifLineEnding") {
           val tmpl =
             """|${if true}
                |  A line
@@ -99,10 +99,10 @@ object TestConstructs extends TestSuite with TestHelper {
             """|  A line
                |Another
             """.stripMargin
-          'unix - {
+          test("unix") {
             validate(tmpl, expt)
           }
-          'windows - {
+          test("windows") {
             validate(tmpl.replace("\n", "\r\n"), expt.replace("\n", "\r\n"))
           }
         }

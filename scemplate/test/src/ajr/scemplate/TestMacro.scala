@@ -8,27 +8,27 @@ object TestMacro extends TestSuite with TestHelper {
   }
 
   val tests = Tests {
-    'macros - {
-      'define0 - {
+    test("macros") {
+      test("define0") {
         val tmpl = "${macro test0 ( ) }This is a macro${endmacro}"
          validate(tmpl, "")
       }
-      'define1 - {
+      test("define1") {
         val tmpl = "${macro test1(arg1)}Macro: $arg1${endmacro}"
         validate(tmpl, "")
       }
-      'define2 - {
+      test("define2") {
         val tmpl = "${macro test2(arg1, arg2)}Macro: $arg1, $arg2${endmacro}"
         validate(tmpl, "")
       }
-      'eval0 - {
+      test("eval0") {
         val tmpl =
           """${macro copyright()}Copyright 2018 - Andrew Richards${endmacro}
             |${copyright()}
             |""".stripMargin
         validate(tmpl, "Copyright 2018 - Andrew Richards\n")
       }
-      'eval1 - {
+      test("eval1") {
         val tmpl =
           """${macro bottles(num)}$num green bottles hanging on the wall${endmacro}
             |${bottles(3)}
@@ -42,7 +42,7 @@ object TestMacro extends TestSuite with TestHelper {
           """.stripMargin
         validate(tmpl, expt)
       }
-      'eval2 - {
+      test("eval2") {
         val tmpl =
           """${macro times(r,c)}${r*c}${endmacro}
             |${for r in range(0,3)}
@@ -58,7 +58,7 @@ object TestMacro extends TestSuite with TestHelper {
         validate(tmpl, expt)
       }
 
-      'scope1 - {
+      test("scope1") {
         val tmpl =
           """${for r in range(0,3)}
             |${macro times(r,c)}${r*c}${endmacro}
@@ -67,7 +67,7 @@ object TestMacro extends TestSuite with TestHelper {
             |""".stripMargin
         intercept[Exception] { validate(tmpl, "") }
       }
-      'scope2 - {
+      test("scope2") {
         val tmpl =
           """${for n in range(1,6)}
             |${macro square(x)}${x*x}${endmacro}

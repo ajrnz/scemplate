@@ -8,19 +8,19 @@ object TestExpressions extends TestSuite with TestHelper {
   }
 
   val tests = Tests {
-    'types - {
-      'string - validateExpression(""""test"""", "test")
-      'int - validateExpression("1", 1)
-      'double - validateExpression("1.2", 1.2)
-      'boolean - validateExpression("true", true)
+    test("types") {
+      test("string") { validateExpression(""""test"""", "test") }
+      test("int") { validateExpression("1", 1) }
+      test("double") { validateExpression("1.2", 1.2) }
+      test("boolean") { validateExpression("true", true) }
     }
-    'basic - {
-      'addInt  - validateExpression("OneInt + 2", 3)
-      'addString  - validateExpression("""OneString + " & only"""", "1 & only")
+    test("basic") {
+      test("addInt ") { validateExpression("OneInt + 2", 3) }
+      test("addString ") { validateExpression("""OneString + " & only"""", "1 & only") }
     }
-    'badExpression - {
-      'empty - expressionParseError("", "Error failed expecting")
-      'intAndDouble - intercept[BadTypeException] { validateExpression("1 == 1.2", "") }
+    test("badExpression") {
+      test("empty") { expressionParseError("", "Error failed expecting") }
+      test("intAndDouble") { intercept[BadTypeException] { validateExpression("1 == 1.2", "") } }
     }
   }
 }

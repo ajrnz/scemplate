@@ -1,11 +1,10 @@
 import mill._
 import mill.scalalib._
 import publish._
-import ammonite.ops._
 
 trait ScemplatePublishModule extends PublishModule {
   def artifactName = "scemplate"
-  def publishVersion = "0.5.2"
+  def publishVersion = "0.6.0"
 
   def pomSettings = PomSettings(
     description = artifactName() + " - scala template engine and simple expression evaluator",
@@ -20,16 +19,17 @@ trait ScemplatePublishModule extends PublishModule {
 }
 
 object scemplate extends ScalaModule with ScemplatePublishModule {
-  def scalaVersion = "2.13.1"
+  def scalaVersion = "2.13.10"
 
   def ivyDeps = Agg(
     ivy"com.lihaoyi::fastparse:2.3.0",
-    ivy"com.lihaoyi::os-lib:0.7.0",
-    ivy"com.propensive::magnolia:0.14.5",
+    ivy"com.lihaoyi::os-lib:0.9.0",
+    ivy"com.softwaremill.magnolia1_2::magnolia:1.1.2",
+    ivy"org.scala-lang:scala-reflect:$scalaVersion",
   )
 
   object test extends Tests {
-    def testFrameworks = Seq("utest.runner.Framework")
+    def testFramework = "utest.runner.Framework"
 
     def test(args: String*) = T.command {
       jar() // make a jar of the test resources for use during the tests
@@ -42,7 +42,7 @@ object scemplate extends ScalaModule with ScemplatePublishModule {
     }
 
     def ivyDeps = Agg(
-      ivy"com.lihaoyi::utest::0.7.4"
+      ivy"com.lihaoyi::utest::0.8.1"
     )
   }
 }

@@ -11,107 +11,107 @@ object TemplateTest extends TestSuite with TestHelper {
 
 
   val tests = Tests{
-    'notDefined1 - intercept[BadNameException] { validate("$foo", "") }
-    'notDefined2 - intercept[BadNameException] { validate("${foo.bar}", "") }
-    'basics - {
-      'string - validate("test", "test")
-      'dollar - validate("$$", "$")
-      'dollarSpace - invalid("$ {}")
+    test("notDefined1") { intercept[BadNameException] { validate("$foo", "") } }
+    test("notDefined2") { intercept[BadNameException] { validate("${foo.bar}", "") } }
+    test("basics") {
+      test("string") { validate("test", "test") }
+      test("dollar") { validate("$$", "$") }
+      test("dollarSpace") { invalid("$ {}") }
     }
-    'types - {
-      'literalString - validate("""${"string"}""", "string")
-      'literalIntSignPos - validate("${+12}", "12")
-      'literalIntSignNeg - validate("${-12}", "-12")
-      'literalDouble - validate("${0.2}", "0.2")
-      'literalDoubleNeg - validate("${-0.2}", "-0.2")
-      'literalDoublePos - validate("${+0.2}", "0.2")
-      'literalBooleanTrue - validate("${true}", "true")
-      'literalBooleanFalse - validate("${false}", "false")
-      'variableString - validate("$OneString", "1")
-      'variableStringSimple - validate("$OneString.Another", "1.Another")
-      'variableStringMissing - intercept[BadNameException] { validate("$Another.Thing", "") }
-      'variableInt - validate("$OneInt", "1")
-      'variableBooleanTrue - validate("$trueValue", "true")
-      'variableBooleanTrue2 - validate("${trueValue}", "true")
-      'variableBooleanFalse - validate("$falseValue", "false")
-      'negationTrue - validate("${!true}", "false")
-      'negationFalse - validate("${!false}", "true")
-    }
-
-    'misc - {
-      'whitespace1 - validate("${ ( 1 + 2 ) * 3 - 4 }", "5")
-      'whitespace2 - validate("${(1+2)*3-4 == 0}", "false")
-      'quotes - validate("""${"test" + "fire"}""", "testfire")
-      'quoteQuote - validate("""${"Quote \" here"}""", """Quote " here""")
-      'quoteTab - validate("""${"Tab \t char"}""", "Tab \t char")
-      'quoteUnicode - validate("""${"\u00a9"}""", "\u00a9")
-      'stringEndsWhitespace - validate("""${" test "}""", " test ")
+    test("types") {
+      test("literalString") { validate("""${"string"}""", "string") }
+      test("literalIntSignPos") { validate("${+12}", "12") }
+      test("literalIntSignNeg") { validate("${-12}", "-12") }
+      test("literalDouble") { validate("${0.2}", "0.2") }
+      test("literalDoubleNeg") { validate("${-0.2}", "-0.2") }
+      test("literalDoublePos") { validate("${+0.2}", "0.2") }
+      test("literalBooleanTrue") { validate("${true}", "true") }
+      test("literalBooleanFalse") { validate("${false}", "false") }
+      test("variableString") { validate("$OneString", "1") }
+      test("variableStringSimple") { validate("$OneString.Another", "1.Another") }
+      test("variableStringMissing") { intercept[BadNameException] { validate("$Another.Thing", "") } }
+      test("variableInt") { validate("$OneInt", "1") }
+      test("variableBooleanTrue") { validate("$trueValue", "true") }
+      test("variableBooleanTrue2") { validate("${trueValue}", "true") }
+      test("variableBooleanFalse") { validate("$falseValue", "false") }
+      test("negationTrue") { validate("${!true}", "false") }
+      test("negationFalse") { validate("${!false}", "true") }
     }
 
-    'idents - {
+    test("misc") {
+      test("whitespace1") { validate("${ ( 1 + 2 ) * 3 - 4 }", "5") }
+      test("whitespace2") { validate("${(1+2)*3-4 == 0}", "false") }
+      test("quotes") { validate("""${"test" + "fire"}""", "testfire") }
+      test("quoteQuote") { validate("""${"Quote \" here"}""", """Quote " here""") }
+      test("quoteTab") { validate("""${"Tab \t char"}""", "Tab \t char") }
+      test("quoteUnicode") { validate("""${"\u00a9"}""", "\u00a9") }
+      test("stringEndsWhitespace") { validate("""${" test "}""", " test ") }
+    }
+
+    test("idents") {
       invalid("$20one")
       invalid("${20one}")
       validate("${twenty_one}", "21")
     }
 
-    'functions - {
-      'oneParam - validate("${lowerCase(this)}", "this")
-      'twoParam - validate("""${repeat("abc", 3)}""", "abcabcabc")
-      'toFewParams - intercept[BadTypeException] { validate("${lowerCase()}", "this") }
+    test("functions") {
+      test("oneParam") { validate("${lowerCase(this)}", "this") }
+      test("twoParam") { validate("""${repeat("abc", 3)}""", "abcabcabc") }
+      test("toFewParams") { intercept[BadTypeException] { validate("${lowerCase()}", "this") } }
     }
 
-    'expressions - {
-      'int - {
-        'addition - validate("${1+2}", "3")
-        'subtraction - validate("${5-2}", "3")
-        'multiplication - validate("${5*2}", "10")
-        'division - validate("${10/4}", "2")
-        'modulus - validate("${10%3}", "1")
-        'precedence - validate("${1+2*3-4}", "3")
-        'brackets - validate("${(1+2)*3-4}", "5")
-        'mixedTypes1 - validate("${10*0.5}", "5.0")
-        'mixedTypes2 - validate("${0.5*10}", "5.0")
+    test("expressions") {
+      test("int") {
+        test("addition") { validate("${1+2}", "3") }
+        test("subtraction") { validate("${5-2}", "3") }
+        test("multiplication") { validate("${5*2}", "10") }
+        test("division") { validate("${10/4}", "2") }
+        test("modulus") { validate("${10%3}", "1") }
+        test("precedence") { validate("${1+2*3-4}", "3") }
+        test("brackets") { validate("${(1+2)*3-4}", "5") }
+        test("mixedTypes1") { validate("${10*0.5}", "5.0") }
+        test("mixedTypes2") { validate("${0.5*10}", "5.0") }
       }
-      'double - {
+      test("double") {
         // no ideal comparing doubles like this, I know
-        'addition - validate("${1.4+2.2}", "3.6")
-        'subtraction - validate("${5.5-2.5}", "3.0")
-        'multiplication - validate("${5.5*2.0}", "11.0")
-        'division - validate("${10.0/4.0}", "2.5")
-        'modulus - validate("${10.0%3.0}", "1.0")
-        'mixedTypes1 - validate("${10*0.5}", "5.0")
-        'mixedTypes2 - validate("${0.5*10}", "5.0")
+        test("addition") { validate("${1.4+2.2}", "3.6") }
+        test("subtraction") { validate("${5.5-2.5}", "3.0") }
+        test("multiplication") { validate("${5.5*2.0}", "11.0") }
+        test("division") { validate("${10.0/4.0}", "2.5") }
+        test("modulus") { validate("${10.0%3.0}", "1.0") }
+        test("mixedTypes1") { validate("${10*0.5}", "5.0") }
+        test("mixedTypes2") { validate("${0.5*10}", "5.0") }
       }
     }
 
-    'conditions - {
-      'equal - validate("${1 == 1}", "true")
-      'equalNot - validate("${1 == 2}", "false")
-      'lessThan - validate("${1 < 2}", "true")
-      'lessThan2 - validate("${1 < 1}", "false")
-      'and1 - validate("${true && true}", "true")
-      'and2 - validate("${true && false}", "false")
-      'or1 - validate("${true || true}", "true")
-      'or2 - validate("${true || false}", "true")
-      'or3 - validate("${false || false}", "false")
-      'lessThanEqual1 - validate("${1 <= 1}", "true")
-      'lessThanEqual2 - validate("${1 <= 2}", "true")
-      'lessThanEqual3 - validate("${2 <= 1}", "false")
-      'greaterThan1 - validate("${-1 > -2}", "true")
-      'greaterThan2 - validate("${-2 > 2}", "false")
-      'greaterThanEqual1 - validate("${1 >= 1}", "true")
-      'greaterThanEqual2 - validate("${2 >= 1}", "true")
-      'greaterThanEqual3 - validate("${1 >= 2}", "false")
-      'diffTypes - intercept[BadTypeException] { validate("${2 == false}", "true") }
-      'precedence - validate("${(1+2)*3-4 == 4-1*4+(4/2)}", "false")
-      'precedence2 - validate("""${"test" == "test" && "it" == "it"}""", "true")
-      'multiPrecedence - validate("${1 == 2 == false}", "true")
-      'multiBrackets - validate("${false == (1 == 2)}", "true")
-      'multiInvalid - intercept[BadTypeException] { validate("${false == 1 == 2}", "ex") }
+    test("conditions") {
+      test("equal") { validate("${1 == 1}", "true") }
+      test("equalNot") { validate("${1 == 2}", "false") }
+      test("lessThan") { validate("${1 < 2}", "true") }
+      test("lessThan2") { validate("${1 < 1}", "false") }
+      test("and1") { validate("${true && true}", "true") }
+      test("and2") { validate("${true && false}", "false") }
+      test("or1") { validate("${true || true}", "true") }
+      test("or2") { validate("${true || false}", "true") }
+      test("or3") { validate("${false || false}", "false") }
+      test("lessThanEqual1") { validate("${1 <= 1}", "true") }
+      test("lessThanEqual2") { validate("${1 <= 2}", "true") }
+      test("lessThanEqual3") { validate("${2 <= 1}", "false") }
+      test("greaterThan1") { validate("${-1 > -2}", "true") }
+      test("greaterThan2") { validate("${-2 > 2}", "false") }
+      test("greaterThanEqual1") { validate("${1 >= 1}", "true") }
+      test("greaterThanEqual2") { validate("${2 >= 1}", "true") }
+      test("greaterThanEqual3") { validate("${1 >= 2}", "false") }
+      test("diffTypes") { intercept[BadTypeException] { validate("${2 == false}", "true") } }
+      test("precedence") { validate("${(1+2)*3-4 == 4-1*4+(4/2)}", "false") }
+      test("precedence2") { validate("""${"test" == "test" && "it" == "it"}""", "true") }
+      test("multiPrecedence") { validate("${1 == 2 == false}", "true") }
+      test("multiBrackets") { validate("${false == (1 == 2)}", "true") }
+      test("multiInvalid") { intercept[BadTypeException] { validate("${false == 1 == 2}", "ex") } }
     }
 
-    'context - {
-      'mapConversion - {
+    test("context") {
+      test("mapConversion") {
         val strs = Map("one" -> "1", "two" -> "2")
         val ints = Map("three" -> 3, "four" -> 4)
         val ctx = Context().withMap(strs).withMap(ints)
@@ -119,35 +119,35 @@ object TemplateTest extends TestSuite with TestHelper {
       }
     }
 
-    'errorMessages - {
-      //'ifStart - parseError("${if true}blah", "Error failed expecting endif")
-      //'unclosedString - parseError("""${OneString == "bad}""", """Error failed expecting "\"""")
+    test("errorMessages") {
+      //test("ifStart") { parseError("${if true}blah", "Error failed expecting endif") }
+      //test("unclosedString") { parseError("""${OneString == "bad}""", """Error failed expecting "\"""") }
     }
 
-    'convenienceMethod - {
+    test("convenienceMethod") {
       Template.render("$OneString") ==> "1"
     }
 
-    'arrays - {
-      'apply - validate("${oddNumbers(4)}", "9")
-      'outOfBounds - intercept[IndexOutOfBoundsException] { validate("${oddNumbers(5)}", "") }
-      'multiDim - intercept[BadTypeException] { validate("${oddNumbers(0,1)}", "") }
+    test("arrays") {
+      test("apply") { validate("${oddNumbers(4)}", "9") }
+      test("outOfBounds") { intercept[IndexOutOfBoundsException] { validate("${oddNumbers(5)}", "") } }
+      test("multiDim") { intercept[BadTypeException] { validate("${oddNumbers(0,1)}", "") } }
     }
 
-    'map - {
-      'apply - validate("""${abbrev("imo")}""", "in my opinion")
-      'notFound - intercept[NoSuchElementException] { validate("""${abbrev("rtfm")}""", "") }
-      'notFoundType - intercept[NoSuchElementException] { validate("""${abbrev(0)}""", "") }
-      'multiDim - intercept[BadTypeException] { validate("""${abbrev("a", "b")}""", "") }
+    test("map") {
+      test("apply") { validate("""${abbrev("imo")}""", "in my opinion") }
+      test("notFound") { intercept[NoSuchElementException] { validate("""${abbrev("rtfm")}""", "") } }
+      test("notFoundType") { intercept[NoSuchElementException] { validate("""${abbrev(0)}""", "") } }
+      test("multiDim") { intercept[BadTypeException] { validate("""${abbrev("a", "b")}""", "") } }
     }
 
-    'defined - {
-      'present - validate("${defined(OneString)}", "true")
-      'absent - validate("${defined(NotHere)}", "false")
-      'caseClassPresent1 - validate("${defined(user.person.name)}", "true")
-      'caseClassPresent2 - validate("${defined(user)}", "true")
-      'caseClassAbsent1 - validate("${defined(user.nothere.name)}", "false")
-      'caseClassAbsent2 - validate("${defined(a.b.c)}", "false")
+    test("defined") {
+      test("present") { validate("${defined(OneString)}", "true") }
+      test("absent") { validate("${defined(NotHere)}", "false") }
+      test("caseClassPresent1") { validate("${defined(user.person.name)}", "true") }
+      test("caseClassPresent2") { validate("${defined(user)}", "true") }
+      test("caseClassAbsent1") { validate("${defined(user.nothere.name)}", "false") }
+      test("caseClassAbsent2") { validate("${defined(a.b.c)}", "false") }
     }
   }
 }
