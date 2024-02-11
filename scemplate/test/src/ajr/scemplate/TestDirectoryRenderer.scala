@@ -2,11 +2,12 @@ package ajr.scemplate
 
 import os._
 import utest._
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
+import java.net.URLClassLoader
+
 
 object TestDirectoryRenderer extends TestHelper {
-  val allDir = pwd / 'scemplate / 'test / 'resources / 'templates / 'all
-  val outDir = pwd / 'out / 'testDirRender
+  val allDir = Path("scemplate/test/resources/templates/all", os.pwd)
+  val outDir = pwd / "out" / "testDirRender"
   remove.all(outDir)
 
   val tests = Tests {
@@ -24,7 +25,7 @@ object TestDirectoryRenderer extends TestHelper {
       test("basic") {
         test("resources") {
           val reader = DirectoryRenderer.resourceReader("templates/all")
-          val out = outDir / 'allResources
+          val out = outDir / "allResources"
           val writer = DirectoryRenderer.fileSystemWriter(out)
 
           DirectoryRenderer.renderTree(testContext, reader, writer)
@@ -38,7 +39,7 @@ object TestDirectoryRenderer extends TestHelper {
 
         test("files") {
           val reader = DirectoryRenderer.fileSystemReader(allDir)
-          val out = outDir / 'allFiles
+          val out = outDir / "allFiles"
           val writer = DirectoryRenderer.fileSystemWriter(out)
 
           DirectoryRenderer.renderTree(testContext, reader, writer)
@@ -47,42 +48,40 @@ object TestDirectoryRenderer extends TestHelper {
 
         test("jar") {
           val reader = jarReader(_ => false)
-          val out = outDir / 'allJar
+          val out = outDir / "allJar"
           val writer = DirectoryRenderer.fileSystemWriter(out)
           DirectoryRenderer.renderTree(testContext, reader, writer)
           checkContent(out)
         }
       }
 
-      'ignore  -{
-        test("resources") {
-          val reader = DirectoryRenderer.resourceReader("templates/all", ignorePath = _ == RelPath("Readme.txt"))
-          val out = outDir / 'allIgnoreResources
-          val writer = DirectoryRenderer.fileSystemWriter(out)
-          DirectoryRenderer.renderTree(testContext, reader, writer)
-          checkContent(out, shouldHaveReadme = false)
-        }
+      test("resources") {
+        val reader = DirectoryRenderer.resourceReader("templates/all", ignorePath = _ == RelPath("Readme.txt"))
+        val out = outDir / "allIgnoreResources"
+        val writer = DirectoryRenderer.fileSystemWriter(out)
+        DirectoryRenderer.renderTree(testContext, reader, writer)
+        checkContent(out, shouldHaveReadme = false)
+      }
 
-        test("files") {
-          val reader = DirectoryRenderer.fileSystemReader(allDir, ignorePath = _ == RelPath("Readme.txt"))
-          val out = outDir / 'allIgnoreFiles
-          val writer = DirectoryRenderer.fileSystemWriter(out)
-          DirectoryRenderer.renderTree(testContext, reader, writer)
-          checkContent(out, shouldHaveReadme = false)
-        }
+      test("files") {
+        val reader = DirectoryRenderer.fileSystemReader(allDir, ignorePath = _ == RelPath("Readme.txt"))
+        val out = outDir / "allIgnoreFiles"
+        val writer = DirectoryRenderer.fileSystemWriter(out)
+        DirectoryRenderer.renderTree(testContext, reader, writer)
+        checkContent(out, shouldHaveReadme = false)
+      }
 
-        test("jar") {
-          val reader = jarReader(ignorePath = _ == RelPath("Readme.txt"))
-          val out = outDir / 'allIgnoreJar
-          val writer = DirectoryRenderer.fileSystemWriter(out)
-          DirectoryRenderer.renderTree(testContext, reader, writer)
-          checkContent(out, shouldHaveReadme = false)
-        }
+      test("jar") {
+        val reader = jarReader(ignorePath = _ == RelPath("Readme.txt"))
+        val out = outDir / "allIgnoreJar"
+        val writer = DirectoryRenderer.fileSystemWriter(out)
+        DirectoryRenderer.renderTree(testContext, reader, writer)
+        checkContent(out, shouldHaveReadme = false)
       }
 
       test("isTemplate") {
         val reader = DirectoryRenderer.resourceReader("templates/all")
-        val out = outDir / 'isTemplate
+        val out = outDir / "isTemplate"
         val writer = DirectoryRenderer.fileSystemWriter(out)
         DirectoryRenderer.renderTree(testContext, reader, writer, isTemplate = _.segments.last != "that.txt")
         haveFile(out / "1" / "2"/ "that.txt", "I am $twenty_one\n")
@@ -90,9 +89,9 @@ object TestDirectoryRenderer extends TestHelper {
 
       test("renamePath") {
         val reader = DirectoryRenderer.resourceReader("templates/all")
-        val out = outDir / 'renamePath
+        val out = outDir / "renamePath"
         val writer = DirectoryRenderer.fileSystemWriter(out)
-        val renamePath = { p: RelPath =>
+        val renamePath = { (p: RelPath) =>
           if (p.segments.last == "that.txt")
             p / up / up / "moved.txt"
           else p
@@ -104,9 +103,9 @@ object TestDirectoryRenderer extends TestHelper {
       test("badRename") {
         intercept[BadPathException] {
           val reader = DirectoryRenderer.resourceReader("templates/all")
-          val out = outDir / 'badRename
+          val out = outDir / "badRename"
           val writer = DirectoryRenderer.fileSystemWriter(out)
-          val renamePath = { p: RelPath =>
+          val renamePath = { (p: RelPath) =>
             if (p.segments.last == "that.txt")
               p / up / up / up / up / "moved.txt"
             else p
@@ -119,7 +118,7 @@ object TestDirectoryRenderer extends TestHelper {
         intercept[BadPathException] {
           import implicits._
           val reader = DirectoryRenderer.resourceReader("templates/bad1")
-          val out = outDir / 'badName
+          val out = outDir / "badName"
           val writer = DirectoryRenderer.fileSystemWriter(out)
           val newContext = Context().withValues("upUpAndAway" -> "../../../etc/passwd")
           DirectoryRenderer.renderTree(newContext, reader, writer)
