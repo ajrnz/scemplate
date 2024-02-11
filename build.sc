@@ -28,7 +28,7 @@ object scemplate extends ScalaModule with ScemplatePublishModule {
     ivy"org.scala-lang:scala-reflect:$scalaVersion",
   )
 
-  object test extends Tests {
+  object test extends ScalaTests {
     def testFramework = "utest.runner.Framework"
 
     def test(args: String*) = T.command {
