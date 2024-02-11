@@ -12,20 +12,20 @@ import utest._
 
 object SimpleExample extends TestHelper
 {
-  case class Address(street: String, town: String, postCode: String)
-  case class Person(name: String, age: Int, height: Double, email: String, address: Address)
+  case class Address(street: String, town: String, postCode: String) derives Encode
+  case class Person(name: String, age: Int, height: Double, email: String, address: Address) derives Encode
 
   object Address {
-    implicit def toTV(value: Address): TemplateValue = CaseClassEncoder.gen[Address].encode(value)
+    implicit def toTV(value: Address): TemplateValue = value.encode
   }
   object Person {
-    implicit def toTV(value: Person): TemplateValue = CaseClassEncoder.gen[Person].encode(value)
+    implicit def toTV(value: Person): TemplateValue = value.encode
   }
 
   val address = Address("1 The Mall", "London", "SW1A 1AA")
   val person = Person("John Doe", 21, 1.76, "john@doe.com", address)
 
-  implicit val context = Context()
+  implicit val context: Context = Context()
     .withValues(
       "subject" -> "On offer this week...",
       "person" -> person,

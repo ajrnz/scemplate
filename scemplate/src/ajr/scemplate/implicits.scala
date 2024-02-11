@@ -5,11 +5,11 @@ import scala.language.implicitConversions
 
 object implicits {
   implicit class SeqToSeqTemplateValue[X](s: Seq[X]) {
-    def toArrayValue(implicit conv: X => TemplateValue): ArrayValue = ArrayValue(s.map(i => i: TemplateValue).toIndexedSeq)
+    def toArrayValue(implicit conv: X => TemplateValue): ArrayValue = ArrayValue(s.map(i => conv(i)).toIndexedSeq)
   }
 
   implicit class MapToMapTemplateValue[X](s: Map[String,X]) {
-    def toMapValue(implicit conv: X => TemplateValue): MapValue = MapValue(s.map(i => i._1 -> (i._2: TemplateValue)))
+    def toMapValue(implicit conv: X => TemplateValue): MapValue = MapValue(s.map(i => i._1 -> (conv(i._2))))
   }
 
   implicit def toStringValue(value: String): TemplateValue = StringValue(value)
@@ -20,12 +20,12 @@ object implicits {
   implicit def mapToMapValue[T](m: Map[String, T])(implicit conv: T => TemplateValue): TemplateValue = m.toMapValue
 
 
-  implicit val showString: Encode[String] = new Encode[String] { def encode(v: String) = StringValue(v) }
-  implicit val showInt: Encode[Int] = new Encode[Int] { def encode(v: Int) = IntValue(v) }
-  implicit val showDouble: Encode[Double] = new Encode[Double] { def encode(v: Double) = DoubleValue(v) }
-  implicit val showBoolean: Encode[Boolean] = new Encode[Boolean] { def encode(v: Boolean) = BooleanValue(v) }
+  implicit val showString: Encode[String] = new Encode[String] { extension (v: String) def encode: TemplateValue = StringValue(v) }
+  implicit val showInt: Encode[Int] = new Encode[Int] { extension (v: Int) def encode: TemplateValue = IntValue(v) }
+  implicit val showDouble: Encode[Double] = new Encode[Double] { extension (v: Double) def encode: TemplateValue = DoubleValue(v) }
+  implicit val showBoolean: Encode[Boolean] = new Encode[Boolean] { extension (v: Boolean) def encode: TemplateValue = BooleanValue(v) }
   def showArray[X](implicit lift: X => TemplateValue): Encode[Seq[X]] =
-    new Encode[Seq[X]] { def encode(v: Seq[X]) = v.toArrayValue }
+    new Encode[Seq[X]] { extension (v: Seq[X]) def encode: TemplateValue = v.toArrayValue }
   implicit val showArrayString: Encode[Seq[String]] = showArray[String]
 
 

@@ -15,22 +15,22 @@ object TestExample extends TestHelper
   case class ReportInfo(title: String, page: Int, pages: Int, footer:String)
   case class Person(name: String, age: Int)
 
-  implicit val dateToString = new Encode[LocalDate] {
-    def encode(v: LocalDate) = v.format(DateTimeFormatter.ISO_DATE)
+  implicit val dateToString: Encode[LocalDate] = new Encode[LocalDate] {
+    extension (v: LocalDate) def encode: TemplateValue = v.format(DateTimeFormatter.ISO_DATE)
   }
 
-  case class Transaction(date: LocalDate, description: String, value: Double)
+  case class Transaction(date: LocalDate, description: String, value: Double) derives Encode
   object Transaction {
-    implicit def toTV(value: Transaction): TemplateValue = CaseClassEncoder.gen[Transaction].encode(value)
+    implicit def toTV(value: Transaction): TemplateValue = value.encode
   }
 
-  implicit val seqTran = new Encode[Seq[Transaction]] {
-    def encode(v: Seq[Transaction]) = v.toArrayValue
+  implicit val seqTran: Encode[Seq[Transaction]] = new Encode[Seq[Transaction]] {
+    extension (v: Seq[Transaction]) def encode: TemplateValue = v.toArrayValue
   }
 
-  case class Account(person: Person, balance: Double, active: Boolean, transactions: Seq[Transaction])
+  case class Account(person: Person, balance: Double, active: Boolean, transactions: Seq[Transaction]) derives Encode
   object Account {
-    implicit def toTV(value: Account): TemplateValue = CaseClassEncoder.gen[Account].encode(value)
+    implicit def toTV(value: Account): TemplateValue = value.encode
   }
 
 
@@ -55,7 +55,7 @@ object TestExample extends TestHelper
 
   val currencyFormat = NumberFormat.getCurrencyInstance(Locale.UK)
 
-  implicit val context = Context()
+  implicit val context: Context = Context()
     .withValues(
       "title" -> "Bank Statement",
       "date" -> "17 March 2018",

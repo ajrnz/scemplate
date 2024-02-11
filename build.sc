@@ -19,16 +19,15 @@ trait ScemplatePublishModule extends PublishModule {
 }
 
 object scemplate extends ScalaModule with ScemplatePublishModule {
-  def scalaVersion = "2.13.10"
+  def scalaVersion = "3.3.1"
 
   def ivyDeps = Agg(
-    ivy"com.lihaoyi::fastparse:2.3.0",
-    ivy"com.lihaoyi::os-lib:0.9.0",
-    ivy"com.softwaremill.magnolia1_2::magnolia:1.1.2",
-    ivy"org.scala-lang:scala-reflect:$scalaVersion",
+    ivy"com.lihaoyi::fastparse:3.0.2",
+    ivy"com.lihaoyi::os-lib:0.9.2",
+    ivy"com.softwaremill.magnolia1_3::magnolia:1.3.4",
   )
 
-  object test extends Tests {
+  object test extends ScalaTests {
     def testFramework = "utest.runner.Framework"
 
     def test(args: String*) = T.command {

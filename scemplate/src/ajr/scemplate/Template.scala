@@ -30,10 +30,10 @@ private object TemplateParser {
   def boolean      [$: P] = P(StringIn("true", "false") ~ !identChar).!.map(v => BooleanValue(v == "true"))
   def literal      [$: P] = P(double | integer | string | boolean)
   def variable     [$: P] = P(ident).map(x => Variable(Seq(x)))
-  def variablePath [$: P] = P(ident.repX(min=1, sep=".")).map(Variable)
+  def variablePath [$: P] = P(ident.repX(min=1, sep=".")).map(Variable(_))
   def value        [$: P] = P(literal | variablePath)
-  def defined      [$: P] = P(("defined" ~ "(" ~ variablePath ~ ")").map(Defined))
-  def function     [$: P] = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.tupled))
+  def defined      [$: P] = P(("defined" ~ "(" ~ variablePath ~ ")").map(Defined(_)))
+  def function     [$: P] = P((ident ~ "(" ~ expression.rep(sep = ",") ~ ")").map(Function.apply))
   def brackets     [$: P] = P("(" ~/ expression ~ ")")
 
   def valueType[$: P]: P[Value] = P("!".!.? ~ (defined | function | brackets | value)).map{x=> x._1 match {
@@ -73,9 +73,9 @@ private object TemplateParser {
   def macroTemplate   [$: P] = P(("{" ~ "macro" ~/ ident ~ "(" ~ ident.rep(sep=",") ~ ")" ~ ccx ~~ mainText ~~ cmd("endmacro")))
     .map(x=> MacroDef(x._1, x._2, x._3))
   def construct       [$: P]: P[TemplateExpr] = P(forLoop | ifThenElse | macroTemplate)
-  def untilDollar     [$: P]     = P(CharsWhile(_ != '$').!).map(Literal)
+  def untilDollar     [$: P]     = P(CharsWhile(_ != '$').!).map(Literal(_))
   def dollarExpression[$: P]: P[TemplateExpr] = P("$" ~~ (dollar | construct | variable | evalExpression))
-  def mainText        [$: P]: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence)
+  def mainText        [$: P]: P[Sequence] = P(dollarExpression | untilDollar).repX.map(Sequence(_))
 
   def mainDoc         [$: P]: P[Sequence] = P(Start ~~ mainText ~~ End)
 }
